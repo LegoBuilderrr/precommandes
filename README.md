@@ -1,6 +1,6 @@
 # Pré-commandes L'ELEFAN
 
-Boutique de pré-commandes (fournisseur Veggie Deli) : catalogue, commandes et suivi des ventes dans une base SQLite,
+Boutique de pré-commandes pour l'éléfàn : catalogue, commandes et suivi des ventes dans une base SQLite (prototypage initial, à connecter à l'espace membres à terme),
 HelloAsso (sandbox) utilisé uniquement comme moyen de paiement (Checkout API).
 
 ## Lancer en local
@@ -11,26 +11,31 @@ npm run demo         # ajoute ~45 commandes de démonstration (npm run demo -- -
 ```
 
 Node 22.5 ou plus récent (module `node:sqlite`), aucune dépendance npm.
-Les clés HelloAsso viennent de `login.txt` (dans ce dossier, lignes « public » puis « secret » suivies de la clé) ou des
-variables `HELLOASSO_CLIENT_ID` / `HELLOASSO_CLIENT_SECRET`. `login.txt` n'est jamais versionné.
+Les clés de l'API HelloAsso (sandbox) se donnent par variables d'environnement, par exemple :
+
+```bash
+HELLOASSO_CLIENT_ID=… HELLOASSO_CLIENT_SECRET=… npm start
+```
 
 ## Réglages (variables d'environnement)
 
 | Variable | Rôle |
 | --- | --- |
 | `PORT`, `HOST` | port et adresse d'écoute (8443, 127.0.0.1) |
-| `BASE_URL` | adresse publique, éventuellement avec un préfixe (`https://codexprod.fr/precommandes`) |
+| `BASE_URL` | adresse publique, éventuellement avec un préfixe |
 | `PLAIN_HTTP=1` | http simple derrière un proxy qui fait déjà le TLS |
-| `ADMIN_PASSWORD` | mot de passe de l'administration (sans lui, l'admin est ouverte : usage local uniquement) |
+| `ADMIN_PASSWORD` | mot de passe de l'administration |
 | `DB_FILE`, `UPLOAD_DIR` | base SQLite et dossier des images téléversées |
+| `HELLOASSO_CLIENT_ID`, `HELLOASSO_CLIENT_SECRET` | clés de l'API HelloAsso |
+| `HELLOASSO_API`, `HELLOASSO_ORG` | adresse de l'API (sandbox par défaut) et organisation (`l-elefan`) |
 
 ## Fonctionnement
 
-- Une **campagne** a ses produits, ses commandes, ses **dates de livraison** et un **délai maximum de commande** (jours avant la
+- Une **campagne** a ses **produits**, ses **commandes**, ses **dates de livraison** et un **délai maximum de commande** (jours avant la
   livraison). Une boutique prend des commandes pour la prochaine livraison ; sans livraison à venir, ou si elle est plus proche
-  que le délai, elle reste visible mais fermée. Un **seuil minimum** (poids ou montant) ajoute « sous réserve d'atteindre notre
-  seuil de … » tant que les commandes payées pour cette livraison ne l'atteignent pas.
-- Un prix peut avoir un **nom** (ex. « x2 ») affiché sur la boutique à la place du poids ; le poids sert toujours aux totaux.
+  que le délai, elle reste visible mais fermée. Un **seuil minimum** (poids ou montant) ajoute sur la boutique une mention "sous réserve d'atteindre notre
+  seuil de … " tant que les commandes payées pour cette livraison ne l'atteignent pas.
+- Un prix peut avoir un **nom** (ex. "x2") affiché sur la boutique à la place du poids ; le poids sert toujours aux totaux.
 - Adresses : `/boutique/<adresse>`, `/admin` (campagnes), `/admin/commandes`, `/admin/produits`, exports CSV.
 
 ## Structure
@@ -70,17 +75,8 @@ cp precommandes.env.example precommandes.env     # puis remplir BASE_URL, ADMIN_
 docker compose up -d --build                      # http://127.0.0.1:4030 (HOST_PORT pour changer le port)
 ```
 
-L'image (`Dockerfile`, basée sur `node:22-alpine`) ne contient que le code : pas de clé, de base ni de `login.txt`. Elle tourne avec
+L'image (`Dockerfile`, basée sur `node:22-alpine`) ne contient que le code. Elle tourne avec
 l'utilisateur `node`, en http simple (`PLAIN_HTTP=1`) pour qu'un proxy fasse le https, et expose une vérification de santé.
 Les données (base SQLite et images téléversées) sont dans le volume `/data` : volume Docker `precommandes-data` par défaut, ou un
 dossier existant (`DATA_DIR=/opt/precommandes/data`, créé avec `chown 1000:1000`). Mise à jour : `git pull` puis
 `docker compose up -d --build`.
-
-## Déploiement actuel (codexprod.fr)
-
-Aujourd'hui le conteneur `precommandes` est lancé à la main (image `node:22-alpine`, code monté depuis `/opt/precommandes/app`) :
-code dans `/opt/precommandes/app`, données dans `/opt/precommandes/data`, réglages dans `/opt/precommandes/precommandes.env`,
-port `127.0.0.1:4030`. Apache relaie `/precommandes/` (fichier `/etc/apache2/codexprod-precommandes.conf`). Mise à jour :
-envoyer les fichiers du projet (`src/`, `public/`, `package.json`) dans `app/` puis `docker restart precommandes`. Depuis la restructuration
-du code, le serveur se lance avec `node src/server.js` ; le conteneur actuellement en ligne exécute encore l'ancienne disposition à plat
-(`server.js`) : à la prochaine mise à jour, envoyer la nouvelle structure et recréer le conteneur avec cette commande. Le `compose.yaml` ci-dessus peut remplacer ce montage.
