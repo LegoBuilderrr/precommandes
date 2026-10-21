@@ -39,7 +39,7 @@ for (const c of campaigns.list()) {
     }
     const cents = lines.reduce((sum, l) => sum + l.s.price_cents * l.qty, 0);
     const roll = rnd();
-    const status = roll < 0.72 ? 'paid' : roll < 0.84 ? 'pending' : roll < 0.94 ? 'refunded' : 'failed';
+    const status = roll < 0.84 ? 'paid' : roll < 0.94 ? 'refunded' : 'failed';          // no pending orders in the demo
     const created = stamp(Math.floor(rnd() * 26), 8 + Math.floor(rnd() * 13));
     const first = pick(FIRST), last = pick(LAST);
     const paidAt = status === 'paid' || status === 'refunded' ? created.replace(/:\d\d$/, ':59') : null;
