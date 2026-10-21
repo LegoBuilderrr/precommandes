@@ -1,0 +1,17 @@
+{
+  "name": "elefan-precommandes",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pré-commandes L'ELEFAN - catalogue, commandes et suivi des ventes, HelloAsso comme moyen de paiement",
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "demo": "node --disable-warning=ExperimentalWarning scripts/seed-demo.js",
+    "test": "bash tests/run-all.sh"
+  },
+  "engines": {
+    "node": ">=22.5"
+  },
+  "devDependencies": {
+    "jsdom": "^30.1.3"
+  }
+}

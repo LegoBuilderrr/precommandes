@@ -1,0 +1,19 @@
+# docker compose up -d --build
+# Réglages dans precommandes.env (voir precommandes.env.example).
+# Données : volume Docker « precommandes-data » par défaut, ou un dossier (DATA_DIR=/opt/precommandes/data, à créer avec
+# chown 1000:1000 car le conteneur tourne avec l'utilisateur node).
+services:
+  precommandes:
+    build: .
+    image: precommandes
+    container_name: precommandes
+    restart: unless-stopped
+    env_file: precommandes.env
+    ports:
+      - "127.0.0.1:${HOST_PORT:-4030}:3000"      # seulement en local : un proxy (Apache...) fait le https public
+    volumes:
+      - ${DATA_DIR:-precommandes-data}:/data
+    mem_limit: 256m
+
+volumes:
+  precommandes-data:

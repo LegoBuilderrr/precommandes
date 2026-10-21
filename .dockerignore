@@ -1,0 +1,19 @@
+# secrets, local data and files that do not belong in the image
+login.txt
+*.pem
+*.db
+*.db-shm
+*.db-wal
+uploads/
+data/
+tests/
+scripts/
+.git/
+.gitignore
+.dockerignore
+Dockerfile
+compose.yaml
+*.env
+*.env.example
+README.md
+node_modules/

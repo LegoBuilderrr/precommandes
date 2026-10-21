@@ -1,0 +1,276 @@
+/* Look and feel modelled on https://membres.lelefan.org/ (Materialize-style): light-blue brand colour,
+   orange black_jack headings, Raleway text, underlined inputs, raised buttons, shadowed cards.
+
+   Sections: 1 base · 2 page frame · 3 buttons · 4 forms · 5 messages · 6 cards · 7 shop · 8 popups ·
+             9 confirmation page · 10 admin · 11 print · 12 phones (everything for <= 640px is at the end) */
+
+/* ---- 1. base ---- */
+@font-face{font-family:Raleway;font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/raleway-400.woff2) format("woff2")}
+@font-face{font-family:Raleway;font-style:normal;font-weight:600;font-display:swap;src:url(/fonts/raleway-600.woff2) format("woff2")}
+@font-face{font-family:black_jackregular;font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/blackjack.woff) format("woff")}
+:root{--brand:#51cae9;--brand-d:#2ba9cc;--brand-l:#d9f3fa;--orange:#ff9800;--ok:#8bc34a;--bad:#f44336;--link:#039be5;
+  --ink:rgba(0,0,0,.87);--mut:#757575;--line:#e0e0e0;--red:#e11d1d;
+  --z1:0 2px 2px 0 rgba(0,0,0,.14),0 3px 1px -2px rgba(0,0,0,.12),0 1px 5px 0 rgba(0,0,0,.2);
+  --z2:0 8px 17px 2px rgba(0,0,0,.14),0 3px 14px 2px rgba(0,0,0,.12),0 5px 5px -3px rgba(0,0,0,.2)}
+*{box-sizing:border-box}
+html{font-family:Raleway,sans-serif;font-size:15px}
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;color:var(--ink);background:#fff;line-height:1.5}
+main{flex:1 0 auto;width:100%;max-width:960px;margin:0 auto;padding:1em 1em 2em}
+body.admin main{max-width:1100px}
+h1,h2,h3,h4,h5{font-family:Raleway,sans-serif;font-weight:600;text-transform:uppercase;line-height:1.2}
+h1{font-size:1.8rem;margin:1rem 0 .6rem}h2{font-size:1.1rem;margin:0}h3{font-size:1rem;margin:1.2em 0 .4em}
+h2 small,h1 small{font-weight:400;text-transform:none;color:var(--mut);font-size:.8em;margin-left:.3em}
+h1.header{font-family:black_jackregular,sans-serif;font-weight:400;text-transform:none;color:var(--orange);text-align:center;font-size:2.6rem}
+h1.pagetitle{margin-bottom:2.2rem}
+h2.spaced{margin-top:3.5rem}
+.lead{text-align:center;margin:0 0 1em;color:var(--mut)}
+.hint{color:var(--mut);font-size:.9rem}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+strong,b{font-weight:600}
+.num{text-align:right;white-space:nowrap}
+.scroll{overflow-x:auto}
+
+/* ---- 2. page frame ---- */
+.topnav{background:var(--brand);color:#fff;box-shadow:var(--z1)}
+.navin{max-width:1100px;margin:0 auto;padding:0 1em;height:64px;display:flex;align-items:center}
+.brand{font-family:black_jackregular,sans-serif;font-size:2rem;color:#fff;line-height:1;margin-right:auto}.brand:hover{text-decoration:none}
+.brand .short{display:none}
+.pagefoot{background:var(--brand);color:#fff;text-align:center;padding:1.2em 1em;font-size:.9rem}
+.pagefoot a{color:#fff;text-decoration:underline}.pagefoot a:hover{text-decoration:none}
+body.shop .pagefoot{padding-bottom:5.5em}   /* room for the fixed cart bar */
+
+/* ---- 3. buttons (Materialize .btn: raised, uppercase, brand colour) ---- */
+button,.btn{font:inherit;font-size:.9rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;height:36px;line-height:36px;padding:0 1.2rem;border:0;border-radius:2px;
+  background:var(--brand);color:#fff;cursor:pointer;box-shadow:var(--z1);display:inline-block;text-decoration:none;transition:background-color .2s,box-shadow .2s;vertical-align:middle}
+button:hover,.btn:hover{background:var(--brand);box-shadow:var(--z2);text-decoration:none;filter:brightness(1.05)}
+button:disabled{background:#dfdfdf;color:#9f9f9f;box-shadow:none;cursor:not-allowed;filter:none}
+button.big{width:100%;height:54px;line-height:54px;font-size:1rem;margin-top:1em}
+button.primary.big{background:var(--brand-d)}button.primary.big:disabled{background:#dfdfdf}
+button.flat,.btn.flat{background:transparent;color:#343434;box-shadow:none}
+button.flat:hover,.btn.flat:hover{background:rgba(0,0,0,.08);box-shadow:none;filter:none}
+button.ibtn{height:auto;line-height:1;padding:.25rem .4rem;background:none;color:var(--mut);box-shadow:none;font-size:1rem;text-transform:none;letter-spacing:0;font-weight:400}
+button.ibtn:hover{color:var(--ink);background:rgba(0,0,0,.06);box-shadow:none;filter:none}button.ibtn.del:hover{color:var(--bad)}
+.ibtn:disabled{opacity:.7;cursor:not-allowed}
+button:focus-visible,a:focus-visible{outline:2px solid var(--brand-d);outline-offset:2px}
+
+/* ---- 4. forms (Materialize: underline only, brand colour on focus) ---- */
+input,textarea,select{font:inherit;color:var(--ink);max-width:100%}
+input[type=text],input[type=email],textarea{background:transparent;border:0;border-bottom:1px solid #9e9e9e;border-radius:0;padding:.45em 0;outline:0;width:100%;box-shadow:none}
+input[type=text]:focus,input[type=email]:focus,textarea:focus{border-bottom:1px solid var(--brand);box-shadow:0 1px 0 0 var(--brand)}
+textarea{resize:vertical}
+textarea.code{font-family:ui-monospace,Consolas,monospace;font-size:.85rem;width:100%;border:1px solid var(--line);padding:.5em;border-radius:2px}
+label{display:block;margin:.8em 0;color:var(--mut);font-size:.85rem}label input,label textarea{display:block;margin-top:.1em;font-size:1rem}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:0 1.2em}
+.cform{display:grid;gap:.2em;max-width:560px}.cform .actions{margin-top:.6em}
+.cform select{border:0;border-bottom:1px solid #9e9e9e;background:transparent;padding:.4em .2em;font:inherit;border-radius:0}
+fieldset.plain{border:0;padding:0;margin:0;min-width:0}
+
+/* ---- 5. messages ---- */
+.note{background:#fff8e1;border:1px solid #ffecb3;padding:.6em .9em;border-radius:2px}
+.alert{background:var(--bad);color:#fff;font-weight:600;padding:.7em 1em;border-radius:2px}
+.ok{background:var(--ok);color:#fff;font-weight:600;padding:.7em 1em;border-radius:2px}
+.warn{background:var(--orange);color:#fff;font-weight:600;padding:.7em 1em;border-radius:2px}.warn a{color:#fff;text-decoration:underline}
+.banner{padding:.9em 1.1em;border-radius:2px;margin:.6em 0}.banner b{font-size:1.15rem}
+.pill{font-size:.7rem;padding:.15em .7em;border-radius:99px;color:#fff;vertical-align:middle;text-transform:none;letter-spacing:0}
+.pill.open{background:var(--ok)}.pill.closed{background:var(--mut)}.pill.demo{background:var(--orange)}
+
+/* ---- 6. cards ---- */
+.card{background:#fff;border-radius:2px;box-shadow:var(--z1);padding:1em 1.2em;margin:1em 0}
+
+/* ---- 7. shop ---- */
+/* campaign header: admin-written HTML in a pale card (a leading <figure> becomes a photo with the text beside it) */
+.campaign-header{margin:0 auto 1.5em;display:flow-root;width:fit-content;max-width:min(100%,680px);padding:1.1em 1.4em;background:#f4fbfe;border:1px solid #d6eff8;border-radius:8px;line-height:1.6;text-wrap:balance}
+.campaign-header img{max-width:100%;height:auto}
+.campaign-header>:first-child{margin-top:0}.campaign-header>:last-child{margin-bottom:0}
+.campaign-header:has(>figure){display:flex;align-items:center;justify-content:center;gap:1.6em}
+.campaign-header figure{flex:0 0 190px;width:190px;margin:0;text-align:center}
+.campaign-header figure img{display:block;width:100%;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.campaign-header figcaption{margin-top:.5em;font-size:.85em;font-style:italic;color:#555}
+.campaign-header:has(>figure)>:not(figure){flex:1 1 220px;font-size:1.08em}
+.campaign-header ul{list-style:none;margin:.7em 0 0;padding:0}
+.campaign-header li{padding:.15em 0 .15em 1.5em;position:relative;text-align:left}
+.campaign-header li::before{content:'✓';position:absolute;left:0;color:var(--brand-d);font-weight:700}
+/* delivery notice under the title */
+.delivery{text-align:center;font-size:1.2rem;margin:.2em 0 .3em}
+.deadline{text-align:center;margin:0 0 1em;font-size:1rem}.deadline b{color:var(--ink)}
+/* product cards */
+.pintro{display:flex;gap:1.1em;align-items:flex-start;margin-bottom:.8em}.ptext{flex:1;min-width:0}
+.ptop{display:flex;gap:.8em;align-items:flex-start;justify-content:space-between}.ctext{flex:1;min-width:0}
+.pimg{width:110px;height:110px;object-fit:cover;border-radius:2px;display:block;background:#eef0ed}.pimglink{flex:none;line-height:0;cursor:zoom-in}
+.info{font-size:.85rem}
+.desc{margin:.5em 0 0;color:var(--mut);font-size:.95rem}
+.grid{border-collapse:collapse;width:100%}.grid th,.grid td{padding:.35em .4em;text-align:center;vertical-align:middle}
+.grid th small,.opt small{display:block;color:var(--mut);font-weight:400}
+.grid th.vname{text-align:left;font-weight:600;white-space:nowrap;position:sticky;left:0;background:#fff}
+.grid tr+tr td,.grid tr+tr th{border-top:1px solid #eee}
+.opts{display:flex;flex-wrap:wrap;gap:.6em 1.6em}.opt{display:flex;flex-direction:column;align-items:center;gap:.15em}.osize{font-weight:600}
+/* +/- steppers; a closed shop greys them out (fieldset.plain is disabled) */
+.stepper{display:inline-flex;align-items:stretch;border:1px solid var(--line);border-radius:2px;overflow:hidden;background:#fff}
+.stepper.on{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand);background:var(--brand-l)}
+.stepper button{height:auto;line-height:1;width:2.2em;padding:.35rem 0;border-radius:0;box-shadow:none;font-size:1.2rem;font-weight:400;background:#f5f5f5;color:#333;letter-spacing:0;filter:none}
+.stepper button:hover{background:#e6e6e6;box-shadow:none}.stepper.on button.plus{background:var(--brand);color:#fff}
+.stepper input{width:3em;border:0;border-radius:0;text-align:center;padding:.3em 0;background:transparent;box-shadow:none;-moz-appearance:textfield}
+.stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+fieldset.plain .stepper{opacity:.55}
+/* cart recap (checkout) */
+.lines{list-style:none;margin:0;padding:0}.lines li{display:flex;align-items:center;gap:.6em;padding:.4em 0;border-bottom:1px solid #eee}
+.lines .lbl{flex:1}.lines .amt{min-width:5.5em;text-align:right;font-variant-numeric:tabular-nums}
+.lines button.x{height:auto;line-height:1;padding:.2rem .5rem;background:none;color:var(--mut);box-shadow:none;font-size:1rem;text-transform:none}.lines button.x:hover{color:var(--bad);background:none;box-shadow:none}
+.lines .empty{color:var(--mut);border:0}
+.recap{background:var(--brand-l);border-radius:2px;padding:.3em .9em}.recap li{border-bottom-color:#bfe6f2}.recap li:last-child{border-bottom:0}
+.recap .qty{white-space:nowrap}
+/* checkout card and the fixed cart bar */
+.card.checkout{padding:0;overflow:hidden}
+.cohead{background:var(--brand);color:#fff;padding:.8em 1.2em}.cohead h2{font-size:1.15rem}
+.cobody{padding:.4em 1.2em 1.2em}
+.secure{text-align:center;color:var(--mut);font-size:.85rem;margin:.8em 0 0}
+.cartbar{position:fixed;left:0;right:0;bottom:0;background:var(--brand);color:#fff;box-shadow:0 -4px 16px rgba(0,0,0,.12);z-index:10}
+.barrow{max-width:960px;margin:0 auto;padding:.6em 1em;display:flex;gap:1em;align-items:center;justify-content:space-between}
+.barrow b{font-size:1.35rem;font-variant-numeric:tabular-nums;color:#fff}
+.cartinfo{font-weight:600;text-transform:uppercase;letter-spacing:.5px;font-size:.9rem}
+
+/* ---- 8. popups ---- */
+/* picture popup (click a product picture) */
+.lightbox{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;padding:1em;cursor:zoom-out}
+.lightbox figure{margin:0;text-align:center}
+.lightbox img{max-width:92vw;max-height:80vh;width:auto;height:auto;border-radius:2px;background:#fff;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+.lightbox figcaption{color:#fff;margin-top:.7em;font-weight:600}
+.lb-close{position:absolute;top:.6em;right:.8em;height:44px;width:44px;padding:0;line-height:44px;font-size:1.3rem;background:rgba(255,255,255,.15);box-shadow:none;border-radius:50%}
+.lb-close:hover{background:rgba(255,255,255,.3);box-shadow:none}
+/* message dialog (product editor errors) */
+.modal{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:1em}
+.modal-box{background:#fff;border-radius:2px;box-shadow:var(--z2);max-width:460px;width:100%;padding:1.3em 1.6em;border-top:5px solid var(--bad)}
+.modal-title{font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--bad);margin-bottom:.6em}
+.modal-box p{margin:0 0 1.3em;font-size:1rem}
+.modal-actions{display:flex;gap:.6em;justify-content:flex-end;flex-wrap:wrap}
+/* "set HelloAsso's contribution to 0 €" reminder, with a redrawn HelloAsso screen */
+.fee-box{max-width:560px;border-top-color:var(--brand)}
+.fee-msg{font-size:1.05rem;margin-bottom:1em}.fee-red{color:var(--red)}
+.fee-mock{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:1.2em;align-items:start;padding:1em 1.2em;margin:0 0 1em;background:#fff;border:1px solid #ddd;border-radius:4px;font-family:Arial,Helvetica,sans-serif;color:#1a1a1a}
+.fee-label{grid-column:1;grid-row:1;font-size:1.1rem;font-weight:700;line-height:1.3}
+.fee-amount{font-size:1.15rem;font-weight:700;white-space:nowrap;text-decoration:line-through;text-decoration-color:var(--red);text-decoration-thickness:3px}
+.fee-row2{grid-column:1;grid-row:2;display:flex;align-items:flex-end;gap:.4em;margin-top:.5em;min-height:46px}
+.fee-modify{display:inline-block;font-weight:700;text-decoration:underline;padding:.3em .7em;border:3px solid var(--red);white-space:nowrap}
+.fee-right{grid-column:2;grid-row:1 / span 2;display:flex;flex-direction:column;align-items:flex-end;gap:.35em}.fee-zero{color:var(--red);font-size:1.15rem;font-weight:700}
+.fee-arrow{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}.fee-arrow line{stroke:var(--red);stroke-width:3.5;stroke-linecap:round}.fee-arrow polygon{fill:var(--red)}
+
+/* ---- 9. confirmation page ---- */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 1em}
+.dl{display:grid;grid-template-columns:max-content 1fr;gap:.35em 1.2em;margin:.6em 0 0}.dl dt{color:var(--mut)}.dl dd{margin:0;word-break:break-word}
+.recapt{margin-top:.6em}.recapt .tot td{border-top:2px solid var(--brand);border-bottom:0;background:var(--brand-l)}
+
+/* ---- 10. admin ---- */
+table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #d0d0d0;padding:.7em .5em;text-align:left;vertical-align:top}th{font-weight:600}
+tbody tr:hover,table tr:hover td{background:rgba(242,242,242,.5)}
+.st.paid{color:#5a9216;font-weight:600}.st.pending{color:#e08600}.st.failed{color:var(--bad)}.st.refunded,.st.refunding{color:var(--mut)}
+.actions{display:flex;gap:.6em;flex-wrap:wrap;align-items:center;margin:.8em 0}.actions form{margin:0}
+details summary{cursor:pointer;color:var(--link);margin:.6em 0}details form+form{margin-top:.8em}
+/* campaign picker, at the top of every campaign-scoped page */
+.campbar{background:var(--brand-l);border-bottom:3px solid var(--brand)}
+.campbar-in{max-width:1100px;margin:0 auto;padding:.8em 1em;display:flex;gap:1em;align-items:center;flex-wrap:wrap}
+.campbar form{margin:0}
+.campbar .back{font-weight:600;text-transform:uppercase;letter-spacing:.5px;font-size:.9rem;color:var(--ink);white-space:nowrap;padding:.5em .9em;border:1px solid var(--brand);border-radius:2px;background:#fff}
+.campbar .back:hover{text-decoration:none;background:var(--brand);color:#fff}
+.campbar label{display:flex;align-items:center;gap:.7em;margin:0;color:var(--ink);font-weight:600;font-size:1.05rem;text-transform:uppercase;letter-spacing:.5px}
+.campbar select{font:inherit;font-size:1.2rem;font-weight:600;text-transform:none;letter-spacing:0;padding:.45em .7em;border:2px solid var(--brand);border-radius:2px;background:#fff;color:var(--ink);min-width:15em;max-width:100%;cursor:pointer}
+/* totals, tabs, sales tables, refunds */
+.kpis{display:flex;gap:1em;flex-wrap:wrap;margin:1em 0}
+.kpi{background:#fff;box-shadow:var(--z1);border-top:4px solid var(--brand);border-radius:2px;padding:.8em 1.2em;min-width:11em}.kpi b{display:block;font-size:1.6rem;color:var(--orange)}
+.tabs{display:flex;width:fit-content;gap:0;padding:4px;background:#e8f1f4;border-radius:999px;margin:.4em 0 1.2em}
+.kpis + .tabs,.actions + .tabs{margin-top:2.2rem}
+.tab{padding:.5em 1.6em;color:var(--mut);text-transform:uppercase;font-weight:600;letter-spacing:.5px;font-size:.85rem;border-radius:999px;transition:background .15s,color .15s}
+.tab:hover{text-decoration:none;color:var(--ink)}.tab.on{background:var(--brand);color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25)}.tab.on:hover{color:#fff}
+.sales{width:100%}.sales .ph td{background:#f7fcfe;border-top:3px solid var(--brand)}.sales .pl td:first-child{padding-left:1.8em;color:var(--mut)}
+button.refund{height:auto;line-height:1.2;padding:.35rem .7rem;font-size:.75rem;margin-top:.3em;background:#fff;color:var(--bad);box-shadow:none;border:1px solid var(--bad)}
+button.refund:hover{background:var(--bad);color:#fff;box-shadow:none;filter:none}
+/* campaigns page */
+.camphead{display:flex;gap:1em;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}.campbtns{display:flex;gap:.4em;flex-wrap:wrap}
+.campcard{display:block;color:var(--ink);text-decoration:none}.campcard:hover{box-shadow:var(--z2);text-decoration:none}.campcard .btn{margin-top:.4em}
+.campcard .hint{display:block;margin:.2em 0 .8em}
+.newcamp{margin-top:3.5rem}
+.shoplink{display:flex;align-items:center;gap:.4em;flex-wrap:wrap}
+.copybtn{padding:.3rem .45rem;display:inline-flex;align-items:center;color:var(--mut)}.copybtn:hover{color:var(--link)}.copybtn.copied{color:var(--ok)}
+.copied-msg{font-size:.85rem;color:#5a9216}.copied-msg.bad{color:var(--bad)}
+.cform fieldset.dates{border:0;padding:0;margin:.3em 0 .6em}.cform fieldset.dates legend{padding:0;margin-bottom:.4em;font-size:.9rem;color:var(--mut)}
+.datelist{display:grid;gap:.4em;justify-items:start}.daterow{display:flex;align-items:center;gap:.4em}.daterow input{width:auto}
+.adddate{margin-top:.5em}
+.minrow{display:flex;gap:.5em;align-items:flex-end}.minrow input{width:9em}.minrow select{width:auto}
+/* product editor */
+.toolbar{position:sticky;top:0;z-index:20;background:#fff;padding:.7em 0;display:flex;gap:.6em;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--line)}
+.toolbar .status{color:var(--mut);margin-left:auto}.toolbar .status.dirty{color:#e08600;font-weight:600}.toolbar .status.err{color:var(--bad);font-weight:600}
+.pcard{background:#fff;box-shadow:var(--z1);border-radius:2px;margin:.8em 0}.pcard.off{opacity:.6}
+.phead{display:flex;gap:.5em;align-items:center;padding:.6em .8em;cursor:pointer}.phead .pname{flex:1;font-weight:600}
+.pbody{padding:.2em 1.2em 1.2em 2.2em;border-top:1px solid #eee}.sum{color:var(--mut);font-size:.9rem;flex:1.5}
+.pbody h3{margin:2.2rem 0 .4em;font-size:.85rem;color:var(--mut);letter-spacing:.04em}.pbody h3:first-child{margin-top:1.2rem}
+textarea.pdesc{width:100%;font-size:1rem}
+.thumb{width:34px;height:34px;object-fit:cover;border-radius:2px;flex:none;background:#eef0ed}
+.grip{cursor:grab;color:var(--mut);user-select:none;padding:0 .3em;font-size:1.2rem}.grip:active{cursor:grabbing}
+.dragging{opacity:.4}.drop-before{box-shadow:0 -3px 0 0 var(--brand)}.drop-after{box-shadow:0 3px 0 0 var(--brand)}
+.chip.drop-before{box-shadow:-3px 0 0 0 var(--brand)}.chip.drop-after{box-shadow:3px 0 0 0 var(--brand)}
+.chips{display:flex;flex-wrap:wrap;gap:.4em;align-items:center}.chip{display:inline-flex;align-items:center;gap:.1em;background:var(--brand-l);border-radius:99px;padding:.1em .3em}
+.chip input{border:0;background:transparent;padding:.2em .3em;width:9em;box-shadow:none}.chip input:focus{box-shadow:none;border:0}.chip.off{opacity:.5}
+.addv{display:inline-flex;gap:.3em;align-items:center}.addv input{width:11em}
+.srow{display:flex;gap:.5em;align-items:center;padding:.25em 0}.srow.off{opacity:.55}
+.srow .sname{width:8.5em}.srow .slabel{width:7em}.srow .sprice{width:6.5em;text-align:right}
+.srow .sunit{border:0;border-bottom:1px solid #9e9e9e;background:transparent;padding:.4em .2em;border-radius:0}
+button.addprice{margin-top:1.1rem}
+.media{display:flex;gap:1em;align-items:flex-start;flex-wrap:wrap}.media img.preview{width:96px;height:96px;object-fit:cover;border-radius:2px;background:#eef0ed}
+.media .fields{flex:1;min-width:260px;display:grid;gap:.5em}.media .fields label{margin:0;color:var(--mut)}.media input.wide{width:100%}.media .row{display:flex;gap:.5em;flex-wrap:wrap}
+.preview.pick{cursor:pointer;outline-offset:2px}.preview.pick:hover{opacity:.85}
+button.imgdrop{width:96px;height:96px;padding:0;border:2px dashed #b9c4c8;background:#fafcfc;color:var(--mut);box-shadow:none;border-radius:2px;line-height:1.2;font-size:.85rem}
+button.imgdrop:hover{border-color:var(--brand);color:var(--ink);background:var(--brand-l);box-shadow:none;filter:none}
+.ibtn.locked{opacity:.3;cursor:not-allowed}.ibtn.del.locked:hover{color:var(--mut);background:none}
+
+/* ---- 11. print ---- */
+@media print{.topnav,.pagefoot,.noprint{display:none!important}.card{box-shadow:none;border:1px solid #ccc}}
+
+/* ---- 12. screens up to 700px / 640px (phones) ---- */
+@media (max-width:700px){
+  .brand .long{display:none}.brand .short{display:inline}
+  .cols{grid-template-columns:1fr}
+}
+@media (max-width:600px){.two{grid-template-columns:1fr}}
+@media (min-width:641px){
+  .sales,.days{width:auto}
+  .sales td:first-child,.sales th:first-child{min-width:14em}.days td:first-child,.days th:first-child{min-width:9em}
+  .sales td.num,.sales th.num,.days td.num,.days th.num{padding-left:2.2em}
+}
+@media (max-width:640px){
+  html{font-size:16px}
+  main{padding:.6em .8em 1.5em}
+  h1.header{font-size:2.2rem;margin:.6rem 0 .3rem}
+  input,textarea,select{font-size:16px}              /* below 16px iOS zooms the page when a field is focused */
+  .card{padding:.8em .9em}
+  .pintro{gap:.8em}.pimg{width:92px;height:92px}
+  .ptop{flex-wrap:wrap;gap:.3em}
+  /* variant grid: one block per variant, its prices as a 2-column grid (no sideways scrolling) */
+  .grid,.grid tbody{display:block}
+  .grid tr:first-child{display:none}                 /* the prices header: every cell carries its own label instead */
+  .grid tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.6em .8em;padding:.7em 0;border-top:1px solid #eee}
+  .grid th.vname{grid-column:1/-1;position:static;padding:0;border:0;font-size:1.05rem}
+  .grid td{display:block;padding:0;border:0!important;text-align:center}
+  .grid td::before{content:attr(data-size) " · " attr(data-price);display:block;font-size:.85rem;color:var(--mut);margin-bottom:.25em}
+  .opts{gap:.8em 1.2em;justify-content:center}
+  /* finger-sized steppers */
+  .stepper button{width:44px;min-height:44px;padding:0;font-size:1.4rem}
+  .stepper input{width:52px;min-height:44px}
+  .grid td .stepper{display:flex;width:100%}                    /* fill the column whatever the screen width */
+  .grid td .stepper input{flex:1 1 auto;width:auto;min-width:0}
+  /* recap, pay button, cart bar */
+  .lines li{flex-wrap:wrap}.lines .lbl{flex:1 1 100%}.lines .amt{margin-left:auto}
+  .recap li{flex-wrap:nowrap}.recap .lbl{flex:1 1 auto}.recap li .lbl{font-size:.95rem}   /* one line per item */
+  .pay-ha{display:none}                                          /* "Payer 12,00 €" instead of "… avec HelloAsso" */
+  .barrow{flex-wrap:wrap;gap:.2em .8em;padding:.5em .8em .7em}
+  .barrow b{white-space:nowrap}
+  body.shop .pagefoot{padding-bottom:9em}
+  /* campaign header: photo above the text */
+  .campaign-header{width:auto;padding:1em}.campaign-header:has(>figure){flex-direction:column;gap:1em}.campaign-header:has(>figure)>:not(figure){text-align:center}
+  /* popups */
+  .modal-actions button{flex:1 1 100%;height:auto;min-height:46px;line-height:1.3;padding:.7em 1em;white-space:normal}
+  .fee-label{font-size:1rem}.fee-mock{padding:.8em;column-gap:.6em}.fee-box{padding:1.2em 1em}
+  /* admin: no page-wide sideways scroll */
+  .navin{flex-wrap:wrap;height:auto;min-height:56px}
+  body.admin main{overflow-x:auto}
+  .tab{padding:.6em 1em}
+  .campbar select{min-width:0;width:100%}.campbar label{flex-direction:column;align-items:stretch;gap:.3em;width:100%}.campbar form{flex:1 1 100%}.campbar .back{align-self:flex-start}
+}

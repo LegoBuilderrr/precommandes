@@ -1,0 +1,13 @@
+# secrets and local data: never commit
+login.txt
+*.pem
+*.db
+*.db-shm
+*.db-wal
+uploads/
+node_modules/
+
+tests/out*.txt
+
+precommandes.env
+data/
