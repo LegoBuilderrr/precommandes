@@ -125,6 +125,7 @@ fieldset.plain .stepper{opacity:.55}
 .card.checkout{padding:0;overflow:hidden}
 .cohead{background:var(--brand);color:#fff;padding:.8em 1.2em}.cohead h2{font-size:1.15rem}
 .cobody{padding:.4em 1.2em 1.2em}
+.paydelivery{text-align:center;margin:.8em 0 0;font-size:1rem}
 .secure{text-align:center;color:var(--mut);font-size:.85rem;margin:.8em 0 0}
 .cartbar{position:fixed;left:0;right:0;bottom:0;background:var(--brand);color:#fff;box-shadow:0 -4px 16px rgba(0,0,0,.12);z-index:10}
 .barrow{max-width:960px;margin:0 auto;padding:.6em 1em;display:flex;gap:1em;align-items:center;justify-content:space-between}
