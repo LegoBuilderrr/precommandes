@@ -39,11 +39,9 @@ const shopTitle = (c) => `Précommandes ${String(c.name).replace(/^pr[ée]-?comm
 const campaignHeader = (c) => (c.header_html ? `<div class="campaign-header">${c.header_html}</div>` : '');
 
 // Under the title of a shop page: the next delivery and, when orders are closed, why (the page itself stays viewable).
-// a minimum to reach: the delivery only happens if enough is ordered
-const reserve = (st) => (st.threshold && !st.threshold.reached ? ` (sous réserve d’atteindre notre seuil de ${esc(thresholdText(st.threshold))})` : '');
-
 const deliveryNote = (c, st) => {
-  const subject = reserve(st);
+  // a minimum to reach: the delivery only happens if enough is ordered
+  const subject = st.threshold && !st.threshold.reached ? ` (sous réserve d’atteindre notre seuil de ${esc(thresholdText(st.threshold))})` : '';
   const box = (html) => `<div class="deliverybox">${html}</div>`;
   const next = st.next ? box(`<p class="delivery">🚚 Prochaine livraison : <b>${esc(frDate(st.next))}</b>${subject}</p>`) : '';
   // open with a lead time: the deadline comes first, the delivery it is for second
@@ -70,7 +68,7 @@ ${field('email', 'Adresse mail *', 'email', 'autocomplete="email"')}
 <label>Commentaires (optionnel)<textarea name="comment" rows="3">${esc(values.comment)}</textarea></label>
 <h3>Récapitulatif</h3><ul id="recap" class="lines recap"></ul>
 <button class="primary big" id="pay" disabled>Choisissez au moins un produit</button>
-${state.next ? `<p class="paydelivery">🚚 pour une livraison le <b>${esc(frDate(state.next))}</b>${reserve(state)}</p>` : ''}
+${state.next ? `<p class="paydelivery">🚚 Livraison prévue le <b>${esc(frDate(state.next))}</b></p>` : ''}
 <p class="secure">🔒 Paiement sécurisé</p></div></section>
 <div class="cartbar" id="cartbar"><div class="barrow"><span class="cartinfo">🛒 <span id="count">0 article</span></span><b id="total">0,00 €</b></div></div>` : ''}
 </form><script src="/assets/order.js"></script>`;
