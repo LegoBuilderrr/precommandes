@@ -22,7 +22,9 @@ const addOrder = (o) => { const d = db(); const id = Number(d.prepare("insert in
   if (o.delivery) d.prepare('update orders set delivery_date=? where id=?').run(o.delivery, id);
   if (o.item && o.item.size_name) d.prepare('update order_items set size_name=? where order_id=?').run(o.item.size_name, id);
   return id; };
-const future = (n) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
+// "today" is the Paris calendar day, like the app (it differs from the UTC day between 00:00 and 02:00 in Paris)
+const parisToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }).format(new Date());
+const future = (n) => new Date(Date.parse(parisToday + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
 const openShop = (cid) => db().prepare('insert or ignore into deliveries (campaign_id, date) values (?, ?)').run(cid, future(30));
 (async () => {
   let r = await get('/'); assert(r.status === 302 && loc(r) === '/boutique/veggie-deli', `single campaign: / redirects to ${loc(r)}`);
@@ -83,6 +85,7 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
   r = await post('/commander', { ...base, campaign: 'noel-2026', [`q_${c2.sid}_${c2.vid ?? 0}`]: '2' }); const ob = r.status === 303 ? '' : (await r.text()).match(/class="alert">([^<]*)/);
   assert(r.status === 303 && loc(r).includes('helloasso-sandbox.com'), 'valid order in campaign 2 -> HelloAsso checkout' + (ob ? ' [' + ob[1] + ']' : ''));
   const o1 = one('select * from orders where campaign_id=2'); assert(o1 && o1.campaign === 'Noël 2026', 'order stores campaign id + name');
+  html = await (await get('/admin/commandes?c=2&mode=produits')).text(); assert(one("select status from orders where id=?", o1.id).status === 'pending' && html.includes('Aucune vente pour le moment') && !html.includes('class="ph"'), 'Produits mode: a product only in an unpaid order is not listed (no "0 sold" line)');
   r = await post('/commander', { ...base, campaign: 'unknown', q1_0: '1' }); assert(r.status === 404, 'order for unknown campaign -> 404');
 
   // --- two viewing modes

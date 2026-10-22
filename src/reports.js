@@ -2,14 +2,13 @@
 const db = require('./db');
 const { csv, eur } = require('./http');
 
-// Sales of one campaign per product / option / price (`price` = the label stored with the order line).
+// Paid sales of one campaign per product / option / price: unpaid orders must not make a product appear with 0 sold.
 const SALES_SQL = `SELECT oi.product, oi.variant, oi.size, MAX(oi.size_name) AS size_name, MAX(oi.grams) AS grams,
   COALESCE(MIN(p.sort), 1e9) AS psort, COALESCE(MIN(vr.sort), 0) AS vsort, COALESCE(MIN(s.sort), 0) AS ssort,
-  SUM(CASE WHEN o.status='paid' THEN oi.qty ELSE 0 END) AS paid_qty,
-  COALESCE(SUM(CASE WHEN o.status='paid' THEN oi.qty*oi.grams END),0) AS paid_grams
+  SUM(oi.qty) AS paid_qty, COALESCE(SUM(oi.qty*oi.grams),0) AS paid_grams
   FROM order_items oi JOIN orders o ON o.id = oi.order_id
   LEFT JOIN products p ON p.id = oi.product_id LEFT JOIN variants vr ON vr.id = oi.variant_id LEFT JOIN sizes s ON s.id = oi.size_id
-  WHERE o.status IN ('paid','pending') AND o.campaign_id = ?
+  WHERE o.status = 'paid' AND o.campaign_id = ?
   GROUP BY oi.product, oi.variant, oi.size
   ORDER BY psort, oi.product, vsort, oi.variant, ssort, oi.size`;
 const salesByProduct = (campaignId) => db.prepare(SALES_SQL).all(campaignId);
