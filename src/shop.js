@@ -10,11 +10,9 @@ const { refreshOrder, paymentInfo } = require('./orders');
 
 const notFound = (res, what) => send(res, 404, v.layout('Introuvable', `<p>${what} introuvable.</p>`));
 
-// GET / : the campaigns (a single one: straight to its shop)
+// GET / and /precommandes : the campaigns open to the public, newest first (a closed campaign keeps its own page but is not listed)
 function home(res) {
-  const all = campaigns.list().reverse();                                  // newest first
-  if (all.length === 1) return send(res, 302, '', 'text/plain', { Location: `/boutique/${all[0].slug}` });
-  return send(res, 200, v.landing(all));
+  return send(res, 200, v.landing(campaigns.list().reverse().filter((c) => c.state.open)));
 }
 
 // GET /boutique/<slug>

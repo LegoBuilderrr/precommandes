@@ -27,9 +27,11 @@ const parisToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }
 const future = (n) => new Date(Date.parse(parisToday + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
 const openShop = (cid) => db().prepare('insert or ignore into deliveries (campaign_id, date) values (?, ?)').run(cid, future(30));
 (async () => {
-  let r = await get('/'); assert(r.status === 302 && loc(r) === '/boutique/veggie-deli', `single campaign: / redirects to ${loc(r)}`);
+  let r = await get('/'); let html = await r.text(); assert(r.status === 200 && html.includes('Aucune précommande ouverte') && !html.includes('/boutique/'), 'no delivery ahead: the index says nothing is open');
   openShop(1);
-  r = await get('/boutique/veggie-deli'); let html = await r.text();
+  r = await get('/'); html = await r.text(); assert(r.status === 200 && html.includes('<h1 class="header">Précommandes</h1>') && html.includes('<li><a href="/boutique/veggie-deli">Veggie Deli</a></li>'), 'single open campaign: the index still lists it (no redirect)');
+  r = await get('/precommandes'); const html2 = await r.text(); assert(r.status === 200 && html2 === html && (await get('/precommandes/')).status === 200, '/precommandes serves the same index');
+  r = await get('/boutique/veggie-deli'); html = await r.text();
   assert(r.status === 200 && html.includes('name="campaign" value="veggie-deli"') && html.includes('<h1 class="header">Précommandes Veggie Deli</h1>'), 'campaign page shows "Précommandes <name>" + hidden campaign field');
   assert((await get('/boutique/nope')).status === 404, 'unknown campaign slug -> 404');
   html = await (await get('/admin')).text(); assert(html.includes('Nouvelle campagne') && html.includes('Veggie Deli'), 'campaign list shows Veggie Deli');
@@ -66,7 +68,7 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
   const sz = (id) => one('select count(*) n from sizes s join products p on p.id=s.product_id where p.campaign_id=?', id).n;
   assert(pcount(2) === 13 && pcount(1) === 13 && sz(1) === 44 && sz(2) === 44, 'copy: 13 products / 44 sizes in each campaign');
   r = await post('/admin/campagnes/creer', { name: '  ' }); assert(/msg=/.test(loc(r)) && rows('select 1 from campaigns').length === 2, 'empty name refused');
-  r = await get('/'); html = await r.text(); assert(r.status === 200 && (html.match(/class="card campcard"/g) || []).length === 2, 'two open campaigns: landing page lists both');
+  r = await get('/'); html = await r.text(); assert(r.status === 200 && (html.match(/<li><a href="\/boutique\//g) || []).length === 2, 'two open campaigns: the index lists both');
 
   // --- editor is scoped to its campaign
   html = await (await get('/admin/produits?c=2')).text(); assert(html.includes('data-campaign="2"'), 'editor opens campaign 2');
@@ -226,7 +228,7 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
   db().exec('delete from deliveries where campaign_id = 2');
   const nOrders = one('select count(*) n from orders').n;
   r = await post('/commander', { ...base, campaign: 'noel', [`q_${c2.sid}_${c2.vid ?? 0}`]: '1' }); assert(r.status === 403 && one('select count(*) n from orders').n === nOrders, 'ordering in a shop with no delivery ahead -> 403, nothing stored');
-  r = await get('/'); html = await r.text(); assert(r.status === 200 && html.includes('/boutique/noel') && html.includes('/boutique/veggie-deli'), 'with two campaigns the home page lists both (a closed one stays listed)');
+  r = await get('/'); html = await r.text(); assert(r.status === 200 && !html.includes('/boutique/noel') && html.includes('/boutique/veggie-deli'), 'the index lists only open campaigns (the one with no delivery ahead is left out)');
   openShop(2);
   r = await post('/admin/campagnes/supprimer', { id: '2' }); assert(/ne peut pas être supprimée/.test(loc(r)) && pcount(2) === 1, 'campaign with orders cannot be deleted');
   r = await post('/admin/campagnes/creer', { name: 'Brouillon', copyFrom: '' }); const nid = Number(loc(r).split('=')[1]);
@@ -312,7 +314,7 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
   await setDates([], 0); html = await (await get('/admin')).text();
   assert(/Veggie Deli <span class="pill closed">Commandes fermées<\/span>/.test(html) && html.includes('Aucune livraison à venir'), 'campaign card: "Commandes fermées" without a delivery ahead');
   html = await (await get('/admin/commandes?c=1&mode=clients')).text(); assert(!/class="pill (open|closed)"/.test(html) && !html.includes('Ouverte') && !html.includes('Fermée'), 'the campaign bar has no open/closed pill');
-  r = await get('/'); html = await r.text(); assert(r.status === 200 && html.includes('Aucune livraison prévue') && html.includes('Prochaine livraison'), 'home page lists each campaign with its next delivery or "Aucune livraison prévue"');
+  r = await get('/'); html = await r.text(); assert(r.status === 200 && !html.includes('/boutique/veggie-deli') && html.includes('/boutique/noel'), 'a campaign that closed drops off the index');
   await setDates([future(30)], 0);
   // --- a price can have a name (shown to customers instead of the weight)
   { await setDates([future(30)], 0);

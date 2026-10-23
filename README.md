@@ -36,7 +36,7 @@ HELLOASSO_CLIENT_ID=… HELLOASSO_CLIENT_SECRET=… npm start
   que le délai, elle reste visible mais fermée. Un **seuil minimum** (poids ou montant) ajoute sur la boutique une mention "sous réserve d'atteindre notre
   seuil de … " tant que les commandes payées pour cette livraison ne l'atteignent pas.
 - Un prix peut avoir un **nom** (ex. "x2") affiché sur la boutique à la place du poids ; le poids sert toujours aux totaux.
-- Adresses : `/boutique/<adresse>`, `/admin` (campagnes), `/admin/commandes`, `/admin/produits`, exports CSV.
+- Adresses : `/` et `/precommandes` (liste des campagnes ouvertes au public), `/boutique/<adresse>`, `/admin` (campagnes), `/admin/commandes`, `/admin/produits`, exports CSV.
 
 ## Structure
 

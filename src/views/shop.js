@@ -27,11 +27,12 @@ function productCard(p, values) {
   return `<section class="card" data-product><div class="pintro">${img}<div class="ptext"><div class="ptop"><div class="ctext"><h2>${esc(p.name)}</h2>${info}</div></div>${p.description ? `<p class="desc">${esc(p.description)}</p>` : ''}</div></div>${grid}</section>`;
 }
 
-// Home page when there are several campaigns (with a single campaign the server redirects straight to it).
+// Home page (/ and /precommandes): a bare list of the campaigns open to the public.
 function landing(campaigns) {
-  const cards = campaigns.map((c) => `<a class="card campcard" href="/boutique/${esc(c.slug)}"><h2>${esc(c.name)}</h2>${
-    c.state.next ? `<span class="hint">Prochaine livraison : ${esc(frDate(c.state.next))}</span>` : '<span class="hint">Aucune livraison prévue</span>'}<span class="btn${c.state.open ? '' : ' flat'}">${c.state.open ? 'Commander →' : 'Voir →'}</span></a>`).join('');
-  return layout('Pré-commandes', `<h1 class="header">Pré-commandes</h1><p class="lead">${campaigns.length ? 'Choisissez une campagne.' : 'Aucune campagne pour le moment.'}</p>${cards}`);
+  const list = campaigns.length
+    ? `<ul class="shoplist">${campaigns.map((c) => `<li><a href="/boutique/${esc(c.slug)}">${esc(c.name)}</a></li>`).join('')}</ul>`
+    : '<p class="lead">Aucune précommande ouverte pour le moment.</p>';
+  return layout('Précommandes', `<h1 class="header">Précommandes</h1>${list}`);
 }
 
 // Title of a campaign's shop page: always "Précommandes <name>" (a name that already starts with "Précommande(s)" is not doubled).

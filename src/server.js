@@ -1,6 +1,6 @@
 // L'ELEFAN pre-orders: own catalogue + orders in SQLite, HelloAsso (sandbox) only for the payment.
 //   npm start  ->  https://localhost:8443  (self-signed certificate: HelloAsso requires https return URLs)
-//   /                 the campaigns (a single one: straight to it)    /boutique/<slug>  the shop of one campaign
+//   /  (or /precommandes)  the campaigns open to the public    /boutique/<slug>  the shop of one campaign
 //   /admin            campaigns: create and manage (main admin page; see admin.js for the other admin pages)
 // /admin asks for a password (no user name) when ADMIN_PASSWORD is set, otherwise it is open: only use that locally.
 const https = require('node:https');
@@ -40,7 +40,7 @@ async function handle(req, res) {
     if (!isAdmin(req)) return get ? redirect(res, '/admin/connexion') : send(res, 401, 'Connexion requise', 'text/plain; charset=utf-8');
     return admin(req, res, url);
   }
-  if (get && pathname === '/') return shop.home(res);
+  if (get && (pathname === '/' || /^\/precommandes\/?$/.test(pathname))) return shop.home(res);
   const camp = get && /^\/boutique\/([a-z0-9-]+)$/.exec(pathname);
   if (camp) return shop.shopPage(res, camp[1]);
   if (req.method === 'POST' && pathname === '/commander') return shop.submitOrder(req, res);

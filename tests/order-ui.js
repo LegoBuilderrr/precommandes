@@ -4,7 +4,7 @@ const fs = require('fs');
 const B = 'https://localhost:8444';
 const assert = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) process.exitCode = 1; };
 (async () => {
-  const html = await (await fetch(B + '/')).text();
+  const html = await (await fetch(B + '/boutique/veggie-deli')).text();
   const js = fs.readFileSync(require('path').join(__dirname, '..', 'public', 'order.js'), 'utf8');
   const open = () => { const d = new JSDOM(html, { url: B + '/', runScripts: 'outside-only', pretendToBeVisual: true }); return d; };
   let dom = open(); let w = dom.window; const $ = (s) => w.document.querySelector(s);

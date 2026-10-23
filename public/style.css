@@ -188,8 +188,8 @@ button.refund{height:auto;line-height:1.2;padding:.35rem .7rem;font-size:.75rem;
 button.refund:hover{background:var(--bad);color:#fff;box-shadow:none;filter:none}
 /* campaigns page */
 .camphead{display:flex;gap:1em;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}.campbtns{display:flex;gap:.4em;flex-wrap:wrap}
-.campcard{display:block;color:var(--ink);text-decoration:none}.campcard:hover{box-shadow:var(--z2);text-decoration:none}.campcard .btn{margin-top:.4em}
-.campcard .hint{display:block;margin:.2em 0 .8em}
+/* home page: the open campaigns, as a plain list */
+.shoplist{list-style:none;margin:2rem 0;padding:0;text-align:center}.shoplist li{margin:.7em 0}.shoplist a{font-size:1.5rem;font-weight:600}
 .newcamp{margin-top:3.5rem}
 .shoplink{display:flex;align-items:center;gap:.4em;flex-wrap:wrap}
 .copybtn{padding:.3rem .45rem;display:inline-flex;align-items:center;color:var(--mut)}.copybtn:hover{color:var(--link)}.copybtn.copied{color:var(--ok)}
