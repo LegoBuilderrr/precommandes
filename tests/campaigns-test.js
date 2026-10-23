@@ -29,7 +29,7 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
 (async () => {
   let r = await get('/'); let html = await r.text(); assert(r.status === 200 && html.includes('Aucune précommande ouverte') && !html.includes('/boutique/'), 'no delivery ahead: the index says nothing is open');
   openShop(1);
-  r = await get('/'); html = await r.text(); assert(r.status === 200 && html.includes('<h1 class="header">Précommandes</h1>') && html.includes('<li><a href="/boutique/veggie-deli">Veggie Deli</a></li>'), 'single open campaign: the index still lists it (no redirect)');
+  r = await get('/'); html = await r.text(); assert(r.status === 200 && html.includes('<h1 class="header">Précommandes</h1>') && html.includes('<a class="card shopcard" href="/boutique/veggie-deli"><h2>Veggie Deli</h2>') && /Limite de commande : <b>[^<]+<\/b>/.test(html) && /Prochaine livraison : <b>[^<]+<\/b>/.test(html), 'single open campaign: the index still lists it (no redirect)');
   r = await get('/precommandes'); const html2 = await r.text(); assert(r.status === 200 && html2 === html && (await get('/precommandes/')).status === 200, '/precommandes serves the same index');
   r = await get('/boutique/veggie-deli'); html = await r.text();
   assert(r.status === 200 && html.includes('name="campaign" value="veggie-deli"') && html.includes('<h1 class="header">Précommandes Veggie Deli</h1>'), 'campaign page shows "Précommandes <name>" + hidden campaign field');
@@ -68,7 +68,7 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
   const sz = (id) => one('select count(*) n from sizes s join products p on p.id=s.product_id where p.campaign_id=?', id).n;
   assert(pcount(2) === 13 && pcount(1) === 13 && sz(1) === 44 && sz(2) === 44, 'copy: 13 products / 44 sizes in each campaign');
   r = await post('/admin/campagnes/creer', { name: '  ' }); assert(/msg=/.test(loc(r)) && rows('select 1 from campaigns').length === 2, 'empty name refused');
-  r = await get('/'); html = await r.text(); assert(r.status === 200 && (html.match(/<li><a href="\/boutique\//g) || []).length === 2, 'two open campaigns: the index lists both');
+  r = await get('/'); html = await r.text(); assert(r.status === 200 && (html.match(/class="card shopcard"/g) || []).length === 2, 'two open campaigns: the index lists both');
 
   // --- editor is scoped to its campaign
   html = await (await get('/admin/produits?c=2')).text(); assert(html.includes('data-campaign="2"'), 'editor opens campaign 2');

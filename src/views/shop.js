@@ -27,10 +27,11 @@ function productCard(p, values) {
   return `<section class="card" data-product><div class="pintro">${img}<div class="ptext"><div class="ptop"><div class="ctext"><h2>${esc(p.name)}</h2>${info}</div></div>${p.description ? `<p class="desc">${esc(p.description)}</p>` : ''}</div></div>${grid}</section>`;
 }
 
-// Home page (/ and /precommandes): a bare list of the campaigns open to the public.
+// Home page (/ and /precommandes): the campaigns open to the public, one small card each (name, order deadline, next delivery).
 function landing(campaigns) {
   const list = campaigns.length
-    ? `<ul class="shoplist">${campaigns.map((c) => `<li><a href="/boutique/${esc(c.slug)}">${esc(c.name)}</a></li>`).join('')}</ul>`
+    ? campaigns.map((c) => `<a class="card shopcard" href="/boutique/${esc(c.slug)}"><h2>${esc(c.name)}</h2>
+<p>Limite de commande : <b>${esc(frDate(c.state.deadline))}</b></p><p>Prochaine livraison : <b>${esc(frDate(c.state.next))}</b></p></a>`).join('')
     : '<p class="lead">Aucune précommande ouverte pour le moment.</p>';
   return layout('Précommandes', `<h1 class="header">Précommandes</h1>${list}`);
 }
