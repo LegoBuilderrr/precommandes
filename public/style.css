@@ -224,6 +224,9 @@ button.addprice{margin-top:1.1rem}
 button.imgdrop{width:96px;height:96px;padding:0;border:2px dashed #b9c4c8;background:#fafcfc;color:var(--mut);box-shadow:none;border-radius:2px;line-height:1.2;font-size:.85rem}
 button.imgdrop:hover{border-color:var(--brand);color:var(--ink);background:var(--brand-l);box-shadow:none;filter:none}
 .ibtn.locked{opacity:.3;cursor:not-allowed}.ibtn.del.locked:hover{color:var(--mut);background:none}
+/* orders tab: unpaid orders stay hidden until the box under the table is ticked (no script needed) */
+.orders tr.unpaid{display:none}.ordwrap:has(#showpending:checked) tr.unpaid{display:table-row}.ordwrap:has(#showpending:checked) tr.paidnone{display:none}
+.showpending{display:inline-block;margin-top:.8em;color:var(--mut);cursor:pointer}.showpending input{margin-right:.4em}
 
 /* ---- 11. print ---- */
 @media print{.topnav,.pagefoot,.noprint{display:none!important}.card{box-shadow:none;border:1px solid #ccc}}

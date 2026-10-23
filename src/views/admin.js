@@ -51,13 +51,17 @@ function productsPage(tree, ctx) {
     { admin: true, bar: campaignBar(ctx, '/admin/produits'), script: '<script src="/assets/admin-products.js"></script>' });
 }
 
+// Orders that never got paid (checkout abandoned or refused, or HelloAsso unreachable): hidden until the box under the table is ticked.
+const UNPAID = ['pending', 'failed'];
+
 function ordersPage(orders, itemsByOrder, msg, ctx, k) {
   const cid = ctx.campaign.id;
+  const nUnpaid = orders.filter((o) => UNPAID.includes(o.status)).length;
   const rows = orders.map((o) => {
     const refund = o.status === 'paid'
-      ? `<form method="post" action="/admin/commandes/rembourser" data-confirm="Rembourser intégralement la commande n°${o.id} (${euros(o.total_cents)}) à ${esc(o.first_name)} ${esc(o.last_name)} ? Cette action est définitive." onsubmit="return confirm(this.dataset.confirm)"><input type="hidden" name="id" value="${o.id}"><button class="refund">↩ Rembourser</button></form>`
+      ? `<form method="post" action="/admin/commandes/rembourser" data-confirm="Rembourser intégralement la commande n°${o.number} (${euros(o.total_cents)}) à ${esc(o.first_name)} ${esc(o.last_name)} ? Cette action est définitive." onsubmit="return confirm(this.dataset.confirm)"><input type="hidden" name="id" value="${o.id}"><button class="refund">↩ Rembourser</button></form>`
       : o.status === 'refunded' && o.refunded_at ? `<small class="hint">le ${esc(o.refunded_at)}</small>` : '';
-    return `<tr><td>${o.id}${o.demo ? '<br><small class="pill demo">démo</small>' : ''}<td>${esc(o.created_at)}<td>${esc(o.first_name)} ${esc(o.last_name)}<br>${esc(o.email)}` +
+    return `<tr${UNPAID.includes(o.status) ? ' class="unpaid"' : ''}><td>${o.number ?? '—'}${o.demo ? '<br><small class="pill demo">démo</small>' : ''}<td>${esc(o.created_at)}<td>${esc(o.first_name)} ${esc(o.last_name)}<br>${esc(o.email)}` +
       `<td>${(itemsByOrder.get(o.id) || []).map(lineText).join('<br>')}${orderWeight(itemsByOrder.get(o.id))}${o.comment ? `<br><i>${esc(o.comment)}</i>` : ''}<td class="num">${euros(o.total_cents)}` +
       `<td class="st ${esc(o.status)}">${esc(STATUS_FR[o.status] || o.status)}<br>${refund}</tr>`;
   }).join('');
@@ -65,7 +69,9 @@ function ordersPage(orders, itemsByOrder, msg, ctx, k) {
 ${kpis(k)}
 <div class="actions"><a class="btn" href="/admin/commandes.csv?c=${cid}">Télécharger (CSV)</a></div>
 ${tabs(cid, 'clients')}
-<table class="orders"><tr><th>#<th>Date<th>Client<th>Articles<th class="num">Total<th>Statut</tr>${rows || '<tr><td colspan="6">Aucune commande.</tr>'}</table>`,
+<div class="ordwrap"><table class="orders"><tr><th>N°<th>Date<th>Client<th>Articles<th class="num">Total<th>Statut</tr>${rows}${
+    !orders.length ? '<tr><td colspan="6">Aucune commande.</tr>' : nUnpaid === orders.length ? '<tr class="paidnone"><td colspan="6">Aucune commande payée.</tr>' : ''}</table>
+<label class="showpending"><input type="checkbox" id="showpending"> Voir les commandes en attente (${nUnpaid})</label></div>`,
   { admin: true, bar: campaignBar(ctx, '/admin/commandes', 'clients') });
 }
 

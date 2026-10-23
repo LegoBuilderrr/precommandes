@@ -26,9 +26,9 @@ async function refundOrder(req, res) {
   const o = db.prepare('SELECT * FROM orders WHERE id = ?').get(Number(f.get('id')) || 0);
   const back = (m) => redirect(res, msgUrl(`/admin/commandes?c=${(o && o.campaign_id) || (latestCampaign() || {}).id}&mode=clients`, m));
   if (!o) return back('Commande introuvable.');
-  if (o.status !== 'paid') return back(`La commande n°${o.id} n’est pas payée : rien à rembourser.`);
+  if (o.status !== 'paid') return back(`La commande n°${o.number} n’est pas payée : rien à rembourser.`);
   const pay = paymentInfo(o);
-  if (!o.demo && !(pay && pay.id)) return back(`Remboursement impossible : la référence du paiement HelloAsso de la commande n°${o.id} est introuvable. Remboursez-la depuis l’espace HelloAsso.`);
+  if (!o.demo && !(pay && pay.id)) return back(`Remboursement impossible : la référence du paiement HelloAsso de la commande n°${o.number} est introuvable. Remboursez-la depuis l’espace HelloAsso.`);
   // Lock first: a second click (or a second admin) cannot refund the same order twice.
   if (!db.prepare("UPDATE orders SET status = 'refunding' WHERE id = ? AND status = 'paid'").run(o.id).changes) return back('Un remboursement est déjà en cours pour cette commande.');
   let r;
@@ -36,10 +36,10 @@ async function refundOrder(req, res) {
   else try { r = await ha.refundPayment(pay.id); } catch (e) { r = { ok: false, status: 0, text: String(e.message) }; }
   if (r.ok) {
     db.prepare("UPDATE orders SET status = 'refunded', refunded_at = datetime('now'), refund_raw = ? WHERE id = ?").run(r.text.slice(0, 4000), o.id);
-    return back(`Commande n°${o.id} remboursée (${eur(o.total_cents)} €)${o.demo ? ' : simulation, commande de démonstration' : ''}.`);
+    return back(`Commande n°${o.number} remboursée (${eur(o.total_cents)} €)${o.demo ? ' : simulation, commande de démonstration' : ''}.`);
   }
   db.prepare("UPDATE orders SET status = 'paid', refund_raw = ? WHERE id = ?").run(`HTTP ${r.status}: ${r.text.slice(0, 500)}`, o.id);
-  return back(`HelloAsso a refusé le remboursement de la commande n°${o.id} (code ${r.status || 'réseau'}). La commande reste payée.`);
+  return back(`HelloAsso a refusé le remboursement de la commande n°${o.number} (code ${r.status || 'réseau'}). La commande reste payée.`);
 }
 
 // POST /admin/api/televerser : a picture for a product (kept in UPLOAD_DIR, served as /uploads/<name>)

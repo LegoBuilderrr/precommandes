@@ -53,7 +53,7 @@ async function createCheckout({ orderId, campaignName, firstName, lastName, emai
   const r = await call('POST', `/v5/organizations/${ORG}/checkout-intents`, {
     totalAmount: totalCents,
     initialAmount: totalCents,
-    itemName: clip(`Précommande #${orderId} (${campaignName}) : ${summary}`, 250),
+    itemName: clip(`Précommande (${campaignName}) : ${summary}`, 250),
     backUrl: `${baseUrl}/`,
     errorUrl: `${baseUrl}/retour?o=${orderId}`,
     returnUrl: `${baseUrl}/retour?o=${orderId}`,

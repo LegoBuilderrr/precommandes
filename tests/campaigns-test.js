@@ -11,6 +11,7 @@ const db = () => new DatabaseSync(DBF);
 const pcount = (id) => db().prepare('select count(*) n from products where campaign_id=?').get(id).n;
 const rows = (sql, ...a) => db().prepare(sql).all(...a);
 const one = (sql, ...a) => db().prepare(sql).get(...a);
+const numOf = (id) => one('select number from orders where id=?', id).number;   // the customer-facing order number (given once paid)
 const treeOf = async (c) => JSON.parse((await (await get('/admin/produits?c=' + c)).text()).match(/id="init" type="application\/json">([\s\S]*?)<\/script>/)[1]);
 const payload = (tree) => tree.map((p) => ({ id: p.id, name: p.name, active: p.active, description: p.description, image_url: p.image_url, info_url: p.info_url,
   variants: p.variants.map((v) => ({ id: v.id, name: v.name, active: v.active })),
@@ -88,6 +89,15 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
   assert(r.status === 303 && loc(r).includes('helloasso-sandbox.com'), 'valid order in campaign 2 -> HelloAsso checkout' + (ob ? ' [' + ob[1] + ']' : ''));
   const o1 = one('select * from orders where campaign_id=2'); assert(o1 && o1.campaign === 'Noël 2026', 'order stores campaign id + name');
   html = await (await get('/admin/commandes?c=2&mode=produits')).text(); assert(one("select status from orders where id=?", o1.id).status === 'pending' && html.includes('Aucune vente pour le moment') && !html.includes('class="ph"'), 'Produits mode: a product only in an unpaid order is not listed (no "0 sold" line)');
+  assert(o1.number === null, 'a pending order has no order number');
+  html = await (await get('/admin/commandes?c=2&mode=clients')).text();
+  assert(/<tr class="unpaid"><td>—<td>/.test(html) && html.includes('<input type="checkbox" id="showpending"> Voir les commandes en attente (1)') && !/id="showpending" checked/.test(html) && html.includes('Aucune commande payée.'), 'Clients tab: the pending order has no number ("—"), is flagged "unpaid" (hidden by CSS), the "voir les commandes en attente" box is unticked, and the table says no paid order');
+  r = await get('/retour?o=' + o1.id); html = await r.text();
+  assert(r.status === 200 && html.includes('<h1 class="header">Votre commande</h1>') && !/n°\d/.test(html), 'return page of an unpaid order shows no order number');
+  db().prepare("update orders set status='paid' where id=?").run(o1.id); const n1 = numOf(o1.id);
+  const nOther = addOrder({ cid: 1, campaign: 'Veggie Deli', status: 'pending' }); const nOther2 = addOrder({ cid: 1, campaign: 'Veggie Deli', status: 'paid' });
+  assert(n1 > 0 && numOf(nOther2) === n1 + 1 && one('select number from orders where id=?', nOther).number === null, 'the number is given when the order becomes paid, in payment order, without gaps from pending orders');
+  db().prepare("update orders set status='pending' where id=?").run(o1.id); db().prepare("delete from orders where id in (?,?)").run(nOther, nOther2);
   r = await post('/commander', { ...base, campaign: 'unknown', q1_0: '1' }); assert(r.status === 404, 'order for unknown campaign -> 404');
 
   // --- two viewing modes
@@ -202,7 +212,7 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
   html = await (await get('/admin/commandes?c=1&mode=clients')).text();
   assert(html.includes(`action="/admin/commandes/rembourser"`) && html.includes('D&#39;Arc O&quot;Brien &lt;b&gt;') && !html.includes('O"Brien <b>'), 'refund button present and the confirmation text is HTML-escaped');
   assert(html.includes('class="pill demo"'), 'demo orders are labelled');
-  const refundedRow = html.split('</tr>').find((x) => new RegExp(`<tr><td>${oid}(<|$)`).test(x)); assert(refundedRow && !refundedRow.includes('/admin/commandes/rembourser') && refundedRow.includes('Remboursée'), 'refunded order: status shown, no refund button');
+  const refundedRow = html.split('</tr>').find((x) => new RegExp(`<tr[^>]*><td>${numOf(oid)}(<|$)`).test(x)); assert(refundedRow && !refundedRow.includes('/admin/commandes/rembourser') && refundedRow.includes('Remboursée'), 'refunded order: status shown, no refund button');
   html = await (await get('/admin/commandes?c=1&mode=produits')).text();
   assert(/remboursé \(1 commandes\)/.test(html) || /remboursé/.test(html), 'Produits mode shows the refunded amount');
   const q = (await (await get('/admin/commandes?c=1&mode=produits')).text()); assert(!/Faux-cisses<\/b>/.test(q) || true, 'quantities page renders');
@@ -246,7 +256,7 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
   const rawO = (await (await get('/admin/commandes.csv?c=1')).text()), rawT = (await (await get('/admin/totaux.csv?c=1')).text());
   assert(!/Campagne|Veggie Deli|Noël/.test(rawO + rawT), 'no campaign name or column in either CSV');
   assert(!/payé|payée/i.test(oc[0].join() + tc[0].join()), 'no "payé(e)" in the CSV headers');
-  const orow = oc.find((c) => c[0] === String(heavy)), trow = tc.find((c) => c[0] === 'Foulet nature' && c[3] === '2500');
+  const orow = oc.find((c) => c[0] === String(numOf(heavy))), trow = tc.find((c) => c[0] === 'Foulet nature' && c[3] === '2500');
   assert(orow && orow[10] === '2500' && orow[11] === '2' && orow[12] === '5000', 'orders CSV: "2,5kg" is exported as 2500 g, line weight 5000 g: ' + (orow && orow.slice(7, 13).join('|')));
   assert(trow && trow[4] === '2' && trow[5] === '5000', 'totals CSV: unit weight 2500, quantity 2, total 5000 g: ' + (trow && trow.join('|')));
   assert(oc.slice(1).filter((c) => c[12] !== '').every((c) => /^\d+$/.test(c[10]) && /^\d+$/.test(c[12])), 'every weight in the orders CSV is a plain number of grams');
@@ -330,7 +340,7 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
     html = await (await get('/admin/commandes?c=1&mode=produits')).text(); assert(html.includes(`x2 (${String(w0.grams).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} g)`), 'admin Produits tab: "x2 (200 g)"');
     html = await (await get('/admin/commandes?c=1&mode=clients')).text(); assert(/1 × Foulet nature x2 \(\d[\d ]* g\)/.test(html), 'admin Clients tab: "1 × Foulet nature x2 (200 g)"');
     const ocsv = cellsOf(await (await get('/admin/commandes.csv?c=1')).text()), tcsv = cellsOf(await (await get('/admin/totaux.csv?c=1')).text());
-    assert(ocsv.some((c) => c[0] === String(oid) && c[9] === 'x2' && c[10] === String(w0.grams)) && tcsv.some((c) => c[0] === 'Foulet nature' && c[2] === 'x2' && c[3] === String(w0.grams)), 'both CSVs have the name in "Nom du prix" next to the weight in grams');
+    assert(ocsv.some((c) => c[0] === String(numOf(oid)) && c[9] === 'x2' && c[10] === String(w0.grams)) && tcsv.some((c) => c[0] === 'Foulet nature' && c[2] === 'x2' && c[3] === String(w0.grams)), 'both CSVs have the name in "Nom du prix" next to the weight in grams');
     html = await (await get('/retour?o=' + oid)).text(); assert(html.includes('<td>x2<td'), 'the confirmation page lists the name');
     tr = await treeOf(1); tr.find((p) => p.name === 'Foulet nature').sizes[0].name = ''; jj = await save(1, tr);
     t = await shopText(); assert(jj.ok && t.includes('<span class="osize">' + w0.label + '</span>'), 'without a name the shop shows the weight again');

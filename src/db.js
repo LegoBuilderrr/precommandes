@@ -80,6 +80,17 @@ addColumn('campaigns', 'min_kind', "TEXT NOT NULL DEFAULT ''");
 addColumn('campaigns', 'min_value', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('sizes', 'name', "TEXT NOT NULL DEFAULT ''");
 addColumn('order_items', 'size_name', "TEXT NOT NULL DEFAULT ''");
+// The customer-facing order number: given only once an order is paid (never to a pending or failed one), so it has no gaps from abandoned
+// checkouts. `id` stays the internal key (it is in the /retour address). Orders paid before this column existed keep their id as number.
+if (!db.prepare('PRAGMA table_info(orders)').all().some((c) => c.name === 'number')) {
+  db.exec('ALTER TABLE orders ADD COLUMN number INTEGER');
+  db.exec("UPDATE orders SET number = id WHERE status IN ('paid','refunding','refunded')");
+}
+db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS orders_number ON orders(number);
+CREATE TRIGGER IF NOT EXISTS orders_number_on_insert AFTER INSERT ON orders WHEN NEW.number IS NULL AND NEW.status IN ('paid','refunding','refunded')
+BEGIN UPDATE orders SET number = (SELECT COALESCE(MAX(number), 0) + 1 FROM orders) WHERE id = NEW.id; END;
+CREATE TRIGGER IF NOT EXISTS orders_number_on_paid AFTER UPDATE OF status ON orders WHEN NEW.number IS NULL AND NEW.status IN ('paid','refunding','refunded')
+BEGIN UPDATE orders SET number = (SELECT COALESCE(MAX(number), 0) + 1 FROM orders) WHERE id = NEW.id; END;`);
 if (!db.prepare('PRAGMA table_info(orders)').all().some((c) => c.name === 'demo'))
   throw new Error(`${file} was created by an older version of this app. It only holds test data: delete it and restart.`);
 

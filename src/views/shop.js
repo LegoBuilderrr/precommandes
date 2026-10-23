@@ -84,7 +84,7 @@ const dl = (rows) => `<dl class="dl">${rows.filter((r) => r[1]).map(([k, v]) => 
 function returnPage(o, status, items, pay, slug = '') {
   const home = slug ? `/boutique/${esc(slug)}` : '/';
   const banner = {
-    paid: ['ok', '✅ Paiement reçu, merci !', `Votre pré-commande n°${o.id} est enregistrée. Conservez cette page ou le reçu ci-dessous comme preuve de paiement.`],
+    paid: ['ok', '✅ Paiement reçu, merci !', `Votre pré-commande n°${o.number} est enregistrée. Conservez cette page ou le reçu ci-dessous comme preuve de paiement.`],
     pending: ['warn', 'Paiement en attente de confirmation', 'Si vous venez de payer, patientez quelques secondes : cette page se met à jour automatiquement. Sinon, vous pouvez reprendre le paiement.'],
     failed: ['alert', 'Le paiement n’a pas pu être lancé', 'Aucun paiement n’a été effectué. Vous pouvez recommencer votre commande.'],
     refunded: ['warn', 'Commande remboursée', `Cette commande a été remboursée${o.refunded_at ? ` le ${paris(`${o.refunded_at.replace(' ', 'T')}Z`)}` : ''}. Le délai d’arrivée des fonds dépend de votre banque.`],
@@ -101,7 +101,8 @@ function returnPage(o, status, items, pay, slug = '') {
       ? `<a class="btn" href="/retour?o=${o.id}">↻ Vérifier à nouveau</a>${o.redirect_url ? `<a class="btn" href="${esc(o.redirect_url)}">Reprendre le paiement</a>` : ''}<a class="btn flat" href="${home}">Retour à la boutique</a>`
       : `<a class="btn" href="${home}">Recommencer ma commande</a>`;
   const statusText = { paid: 'Payée ✓', pending: 'En attente', failed: 'Non aboutie', refunded: 'Remboursée', refunding: 'Remboursement en cours' }[status];
-  const body = `<h1 class="header">Commande n°${o.id}</h1>${o.campaign ? `<p class="lead">${esc(o.campaign)}</p>` : ''}
+  const title = o.number ? `Commande n°${o.number}` : 'Votre commande';   // the number is given once the order is paid
+  const body = `<h1 class="header">${title}</h1>${o.campaign ? `<p class="lead">${esc(o.campaign)}</p>` : ''}
 <div class="${banner[0]} banner"><b>${banner[1]}</b><br>${esc(banner[2])}</div>
 <section class="card"><h2>Récapitulatif de la commande</h2>
 <div class="scroll"><table class="recapt"><tr><th>Produit<th>Poids<th class="num">Prix unitaire<th class="num">Qté<th class="num">Total</tr>${lines}
@@ -113,7 +114,7 @@ function returnPage(o, status, items, pay, slug = '') {
     ['Date du paiement', esc(pay && pay.date ? paris(pay.date) : '')], ['Commande créée le', esc(paris(`${o.created_at.replace(' ', 'T')}Z`))],
     ['Référence HelloAsso', pay && pay.id ? `paiement n°${esc(pay.id)}` : '']])}</section></div>
 <div class="actions noprint">${actions}</div>${status === 'paid' && slug ? `<script>try{localStorage.removeItem("elefan-cart-${esc(slug)}")}catch(e){}</script>` : ''}`;
-  return layout(`Commande n°${o.id}`, body, { head: status === 'pending' ? '<meta http-equiv="refresh" content="10">' : '' });
+  return layout(title, body, { head: status === 'pending' ? '<meta http-equiv="refresh" content="10">' : '' });
 }
 
 module.exports = { landing, orderForm, returnPage };
