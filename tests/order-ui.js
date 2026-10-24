@@ -45,7 +45,7 @@ const assert = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) pro
   assert(sub.defaultPrevented && $('.modal.fee-modal, .modal .fee-box') && sent === 0, 'pay click is held back and a popup opens');
   const popup = $('.modal'); const ptxt = popup.textContent;
   assert(!popup.querySelector('.modal-title') && !/Paiement effectué par HelloAsso\./.test(ptxt) && !/Sur la page de paiement|cliquez sur/.test(ptxt) && !popup.querySelector('button.flat') && popup.querySelectorAll('button').length === 1, 'no explanatory sentence, no Retour button, only Continuer');
-  assert(/^\s*Pensez à mettre la contribution à 0 €/.test(ptxt), 'popup message: ' + ptxt.slice(0, 120));
+  assert(/^\s*Pensez à mettre la contribution HelloAsso à 0 €/.test(ptxt), 'popup message: ' + ptxt.slice(0, 120));
   const want = specFee(3 * unit / 100).toFixed(2).replace('.', ',') + ' €';
   assert(popup.querySelector('.fee-amount').textContent === want && /Votre contribution au fonctionnement de HelloAsso/.test(ptxt) && popup.querySelector('.fee-modify').textContent === 'Modifier' && popup.querySelector('.fee-zero').textContent === '0€' && popup.querySelector('.fee-arrow'), 'HelloAsso screen redrawn: crossed-out ' + want + ', Modifier boxed, 0€, arrow');
   w.document.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape' })); assert(!$('.modal') && sent === 0, 'Esc closes the popup, nothing sent');
