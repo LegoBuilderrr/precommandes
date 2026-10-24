@@ -43,12 +43,12 @@ const campaignHeader = (c) => (c.header_html ? `<div class="campaign-header">${c
 // Under the title of a shop page: the next delivery and, when orders are closed, why (the page itself stays viewable).
 const deliveryNote = (c, st) => {
   // a minimum to reach: the delivery only happens if enough is ordered
-  const subject = st.threshold && !st.threshold.reached ? ` (sous réserve d’atteindre notre seuil de ${esc(thresholdText(st.threshold))})` : '';
+  const subject = st.threshold && !st.threshold.reached ? `<br>(sous réserve d’atteindre notre seuil de ${esc(thresholdText(st.threshold))})` : '';
   const box = (html) => `<div class="deliverybox">${html}</div>`;
   const next = st.next ? box(`<p class="delivery">🚚 Prochaine livraison : <b>${esc(frDate(st.next))}</b>${subject}</p>`) : '';
   // open with a lead time: the deadline comes first, the delivery it is for second
   if (st.open) return Number(c.lead_days) > 0
-    ? box(`<p class="delivery">Commandes ouvertes jusqu’au <b>${esc(frDate(st.deadline))}</b> inclus</p><p class="hint deadline">🚚 pour une livraison le <b>${esc(frDate(st.next))}</b>${subject}</p>`)
+    ? box(`<p class="delivery">Commandes ouvertes jusqu’au <b>${esc(frDate(st.deadline))}</b> inclus</p><p class="hint deadline">🚚 Livré le <b>${esc(frDate(st.next))}</b>${subject}</p>`)
     : next;
   const why = st.reason === 'none' ? 'Aucune livraison n’est prévue pour le moment.'
     : `La date limite pour commander était le ${esc(frDate(st.deadline))} (${days(Number(c.lead_days))} avant la livraison).`;

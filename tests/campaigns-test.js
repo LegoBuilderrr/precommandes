@@ -297,7 +297,7 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
   assert(!t.includes('Commandes ouvertes jusqu') && t.includes('Prochaine livraison : <b>'), 'lead time 0: just the next delivery, no deadline line');
   // lead time: orders close `lead` days before the delivery (3 days ahead)
   await setDates([future(3)], 3); t = await shopText();
-  assert(t.includes('id="pay"') && t.includes('Commandes ouvertes jusqu’au <b>' + fr(future(0)) + '</b> inclus') && t.includes('pour une livraison le <b>' + fr(future(3)) + '</b>') && t.indexOf('Commandes ouvertes jusqu’au') < t.indexOf('pour une livraison le') && !t.includes('Prochaine livraison'), 'delivery in 3 days, lead 3: still open; deadline line first, then "pour une livraison le" (both dates bold)');
+  assert(t.includes('id="pay"') && t.includes('Commandes ouvertes jusqu’au <b>' + fr(future(0)) + '</b> inclus') && t.includes('Livré le <b>' + fr(future(3)) + '</b>') && t.indexOf('Commandes ouvertes jusqu’au') < t.indexOf('Livré le') && !t.includes('Prochaine livraison'), 'delivery in 3 days, lead 3: still open; deadline line first, then "Livré le" (both dates bold)');
   await setDates([future(3)], 4); t = await shopText();
   assert(!t.includes('id="pay"') && !t.includes('id="cartbar"') && t.includes('Les commandes sont fermées pour le moment') && t.includes('Prochaine livraison : <b>' + fr(future(3)) + '</b>') && t.includes('La date limite pour commander était le ' + fr(future(-1))), 'delivery in 3 days, lead 4: closed, deadline passed yesterday');
   assert(/<fieldset id="products" class="plain" disabled>/.test(t) && t.includes('<h2>Foulet nature</h2>') && t.includes('data-price=') && (t.match(/<input type="number"/g) || []).length > 10, 'closed shop stays viewable: products and prices shown, every control disabled');
@@ -352,7 +352,7 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
     const notice = (txt) => /sous réserve d’atteindre notre seuil de/.test(txt);
     await setMin('', 'kg'); t = await shopText(); assert(campaignRow().k === '' && !notice(t), 'no minimum: no notice');
     r = await setMin('50', 'kg'); assert(/enregistrée/.test(loc(r)) && campaignRow().k === 'weight' && campaignRow().v === 50000, 'minimum of 50 kg stored as grams');
-    t = await shopText(); assert(t.includes('Prochaine livraison : <b>' + fr(future(10)) + '</b> (sous réserve d’atteindre notre seuil de 50 kg)'), 'not reached: the delivery line says "(sous réserve d’atteindre notre seuil de 50 kg)"');
+    t = await shopText(); assert(t.includes('Prochaine livraison : <b>' + fr(future(10)) + '</b><br>(sous réserve d’atteindre notre seuil de 50 kg)'), 'not reached: the delivery line says "(sous réserve d’atteindre notre seuil de 50 kg)"');
     r = await setMin('12,5', 'kg'); assert(campaignRow().v === 12500, 'decimal comma accepted: 12,5 kg'); t = await shopText(); assert(t.includes('seuil de 12,5 kg)'), 'shown as 12,5 kg');
     r = await setMin('500', 'eur'); assert(campaignRow().k === 'money' && campaignRow().v === 50000, 'minimum of 500 € stored as cents'); t = await shopText(); assert(t.includes('seuil de 500,00 €)'), 'shown as an amount: ' + (t.match(/seuil de [^)]*\)/) || [''])[0]);
     html = await (await get('/admin')).text(); assert(/name="min_value"[^>]*value="500"/.test(html) && /<option value="eur" selected>/.test(html) && html.includes('Seuil minimum : 500,00 € · pas encore atteint'), 'editor shows the value and unit; the card says it is not reached yet');
@@ -375,7 +375,7 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
     t = await shopText(); assert(!notice(t), '3 kg paid: reached');
     // with a lead time the notice is on the delivery line under the deadline
     await setMin('9999', 'kg', 2); t = await shopText();
-    assert(t.indexOf('Commandes ouvertes jusqu’au') < t.indexOf('pour une livraison le <b>' + fr(future(10)) + '</b> (sous réserve d’atteindre notre seuil de 9999 kg)') && t.indexOf('pour une livraison le') > 0, 'with a lead time: "pour une livraison le … (sous réserve d’atteindre notre seuil de …)"');
+    assert(t.indexOf('Commandes ouvertes jusqu’au') < t.indexOf('Livré le <b>' + fr(future(10)) + '</b><br>(sous réserve d’atteindre notre seuil de 9999 kg)') && t.indexOf('Livré le') > 0, 'with a lead time: "Livré le … <br>(sous réserve d’atteindre notre seuil de …)"');
     await setMin('', 'kg', 0); await setDates([future(30)], 0); }
   r = await fetch(B + '/admin/commandes/rembourser', { method: 'POST', redirect: 'manual', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: 'https://evil.example' }, body: `id=${bogus}` }); assert(r.status === 403, 'CSRF guard applies to the refund action');
 })().catch((e) => { console.error('ERROR', e); process.exitCode = 1; });

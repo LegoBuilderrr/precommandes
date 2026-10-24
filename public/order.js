@@ -116,7 +116,7 @@
     const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
     const box = el('div', 'modal'); box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-label', 'Paiement effectué par HelloAsso');
     const card = el('div', 'modal-box fee-box');
-    const msg = el('p', 'fee-msg'); msg.append('Paiement effectué par HelloAsso. ', el('b', 'fee-red', 'Pensez à mettre la contribution à 0 €.'));
+    const msg = el('p', 'fee-msg'); msg.append(el('b', 'fee-red', 'Pensez à mettre la contribution à 0 €.'));
     // The HelloAsso screen, redrawn in HTML: the proposed contribution is crossed out and replaced by 0 €.
     const mock = el('div', 'fee-mock'); mock.setAttribute('aria-hidden', 'true');
     const amount = el('span', 'fee-amount', feeText(helloassoFee(total / 100)));
