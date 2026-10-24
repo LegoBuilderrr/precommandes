@@ -133,8 +133,8 @@
     // Red arrow from the "Modifier" box to the crossed-out amount, drawn in pixels so the head keeps its shape.
     const drawArrow = () => {
       const m = mock.getBoundingClientRect(), a = modify.getBoundingClientRect(), t = amount.getBoundingClientRect(), z = zero.getBoundingClientRect();
-      const x1 = a.right - m.left + 8, y1 = a.top - m.top + a.height / 2;
-      const x2 = Math.min(t.left, z.left) - m.left - 10, y2 = t.top - m.top + t.height / 2 + 6;
+      const x1 = a.right - m.left + 6, y1 = a.top - m.top + a.height / 2;
+      const x2 = Math.min(t.left, z.left) - m.left - 8, y2 = (t.top + z.bottom) / 2 - m.top;   // pointing between the crossed-out amount and the 0 €
       const ang = Math.atan2(y2 - y1, x2 - x1), L = 16, W = 7, c = Math.cos(ang), n = Math.sin(ang);
       const bx = x2 - L * c, by = y2 - L * n;                         // base of the head
       arrow.setAttribute('width', m.width); arrow.setAttribute('height', m.height); arrow.setAttribute('viewBox', `0 0 ${m.width} ${m.height}`);

@@ -152,7 +152,7 @@ fieldset.plain .stepper{opacity:.55}
 .fee-mock{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:1.2em;align-items:start;width:82%;margin:0 auto 1.3em;padding:.7em .9em;background:#fff;border:1px solid #ddd;border-radius:4px;box-shadow:0 6px 18px rgba(0,0,0,.28),0 2px 5px rgba(0,0,0,.18);font-size:.85rem;font-family:Arial,Helvetica,sans-serif;color:#1a1a1a}
 .fee-label{grid-column:1;grid-row:1;font-size:1rem;font-weight:700;line-height:1.3}
 .fee-amount{font-size:1rem;font-weight:700;white-space:nowrap;text-decoration:line-through;text-decoration-color:var(--red);text-decoration-thickness:3px}
-.fee-row2{grid-column:1;grid-row:2;display:flex;align-items:flex-end;gap:.4em;margin-top:.4em;min-height:38px;justify-content:flex-end}
+.fee-row2{grid-column:1;grid-row:2;display:flex;align-items:flex-end;gap:.4em;margin-top:.4em;min-height:38px;justify-content:flex-end;padding-right:2.4em}
 .fee-modify{display:inline-block;font-weight:700;text-decoration:underline;padding:.3em .7em;border:3px solid var(--red);white-space:nowrap}
 .fee-right{grid-column:2;grid-row:1 / span 2;display:flex;flex-direction:column;align-items:flex-end;gap:.35em}.fee-zero{color:var(--red);font-size:1rem;font-weight:700}
 .fee-arrow{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}.fee-arrow line{stroke:var(--red);stroke-width:3.5;stroke-linecap:round}.fee-arrow polygon{fill:var(--red)}
