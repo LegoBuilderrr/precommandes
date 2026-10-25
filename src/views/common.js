@@ -16,7 +16,11 @@ const layout = (title, body, { admin = false, script = '', head = '', bar = '' }
   `<main>${body}</main><footer class="pagefoot">© L'éléfàn · Un problème sur cette page ? <a href="https://barrissement.lelefan.org/adherents/channels/incidents-suggestions-informatique" target="_blank" rel="noopener noreferrer">Contactez l'équipe informatique</a></footer>${script}</body></html>`;
 
 // Dates are written in French ("mardi 3 novembre 2026"); `iso` is YYYY-MM-DD.
-const frDate = (iso) => new Date(iso + 'T12:00:00Z').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' });
+// the year is only written when it is not the current one (Paris time)
+const frDate = (iso) => {
+  const d = new Date(iso + 'T12:00:00Z'), thisYear = new Date().toLocaleDateString('en-CA', { year: 'numeric', timeZone: 'Europe/Paris' });
+  return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', ...(iso.slice(0, 4) === thisYear ? {} : { year: 'numeric' }), timeZone: 'Europe/Paris' });
+};
 const days = (n) => `${n} jour${n > 1 ? 's' : ''}`;
 
 // "50 kg" or "500,00 €": the campaign's minimum to reach

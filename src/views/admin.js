@@ -28,12 +28,12 @@ const kpis = (k) => `<div class="kpis"><div class="kpi"><b>${euros(k.paid_cents)
 function dashboard(k, rows, perDay, msg, ctx) {
   const byProduct = new Map();
   for (const r of rows) {
-    const g = byProduct.get(r.product) || { name: r.product, qty: 0, grams: 0, lines: [] };
-    g.qty += r.paid_qty; g.grams += r.paid_grams; g.lines.push(r);
+    const g = byProduct.get(r.product) || { name: r.product, lines: [] };
+    g.lines.push(r);
     byProduct.set(r.product, g);
   }
   const table = [...byProduct.values()].map((g) =>
-    `<tr class="ph"><td><b>${esc(g.name)}</b><td class="num">${g.qty}<td class="num">${g.grams ? fmtG(g.grams) : ''}</tr>` +
+    `<tr class="ph"><td colspan="3"><b>${esc(g.name)}</b></tr>` +
     g.lines.map((r) => `<tr class="pl"><td>${esc(label(r.variant, sizeG(r.size, r.grams, r.size_name)))}<td class="num">${r.paid_qty}<td class="num">${r.paid_grams ? fmtG(r.paid_grams) : ''}</tr>`).join('')).join('');
   const cid = ctx.campaign.id;
   return layout('Commandes', `<h1>Commandes</h1>${msg ? `<p class="note">${esc(msg)}</p>` : ''}

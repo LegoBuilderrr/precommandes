@@ -226,7 +226,7 @@ button.imgdrop:hover{border-color:var(--brand);color:var(--ink);background:var(-
 .ibtn.locked{opacity:.3;cursor:not-allowed}.ibtn.del.locked:hover{color:var(--mut);background:none}
 /* orders tab: unpaid orders stay hidden until the box under the table is ticked (no script needed) */
 .orders tr.unpaid{display:none}.ordwrap:has(#showpending:checked) tr.unpaid{display:table-row}.ordwrap:has(#showpending:checked) tr.paidnone{display:none}
-.showpending{display:inline-block;margin-top:.8em;color:var(--mut);cursor:pointer}.showpending input{margin-right:.4em}
+.showpending{display:inline-flex;align-items:center;gap:.4em;margin-top:.8em;color:var(--mut);cursor:pointer}.showpending input{display:inline-block;margin:0}
 
 /* ---- 11. print ---- */
 @media print{.topnav,.pagefoot,.noprint{display:none!important}.card{box-shadow:none;border:1px solid #ccc}}

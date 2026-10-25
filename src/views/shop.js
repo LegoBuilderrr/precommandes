@@ -48,7 +48,7 @@ const deliveryNote = (c, st) => {
   const next = st.next ? box(`<p class="delivery">🚚 Prochaine livraison : <b>${esc(frDate(st.next))}</b>${subject}</p>`) : '';
   // open with a lead time: the deadline comes first, the delivery it is for second
   if (st.open) return Number(c.lead_days) > 0
-    ? box(`<p class="delivery">Commandes ouvertes jusqu’au <b>${esc(frDate(st.deadline))}</b> inclus</p><p class="hint deadline">🚚 Livré le <b>${esc(frDate(st.next))}</b>${subject}</p>`)
+    ? box(`<p class="delivery">Commandes jusqu’au <b>${esc(frDate(st.deadline))}</b> inclus</p><p class="hint deadline">🚚 Livré le <b>${esc(frDate(st.next))}</b>${subject}</p>`)
     : next;
   const why = st.reason === 'none' ? 'Aucune livraison n’est prévue pour le moment.'
     : `La date limite pour commander était le ${esc(frDate(st.deadline))} (${days(Number(c.lead_days))} avant la livraison).`;

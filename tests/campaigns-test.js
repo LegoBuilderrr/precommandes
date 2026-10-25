@@ -130,6 +130,8 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
   // --- spacing and separators
   html = await (await get('/admin/commandes?c=1&mode=produits')).text(); const css = await (await get('/assets/style.css')).text();
   assert(html.includes('<h2 class="spaced">Par jour') && /h2\.spaced\{margin-top:3\.5rem\}/.test(css), 'more space above "Par jour"');
+  assert(/\.showpending\{[^}]*display:inline-flex/.test(css) && /\.showpending input\{[^}]*display:inline-block/.test(css), 'pending checkbox sits in line with its sentence');
+  { const { frDate } = require('../src/views/common'); const y = new Date().getFullYear(); assert(!frDate(y + '-12-24').includes(String(y)) && frDate((y + 1) + '-01-05').includes(String(y + 1)), 'dates drop the year only when it is the current one'); }
   assert(/\.sales \.ph td\{[^}]*border-top:3px solid var\(--brand\)/.test(css), 'stronger separator above each product row (3px brand line)');
 
   // --- tabs renamed, totals shown in both modes
@@ -261,6 +263,7 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
   assert(trow && trow[4] === '2' && trow[5] === '5000', 'totals CSV: unit weight 2500, quantity 2, total 5000 g: ' + (trow && trow.join('|')));
   assert(oc.slice(1).filter((c) => c[12] !== '').every((c) => /^\d+$/.test(c[10]) && /^\d+$/.test(c[12])), 'every weight in the orders CSV is a plain number of grams');
   const ph = await (await get('/admin/commandes?c=1&mode=produits')).text(), ch = await (await get('/admin/commandes?c=1&mode=clients')).text();
+  assert(/<tr class="ph"><td colspan="3"><b>[^<]+<\/b><\/tr>/.test(ph) && !/<tr class="ph"><td[^>]*><b>[^<]*<\/b><td/.test(ph) && /<tr class="pl">/.test(ph), 'Produits: product header row carries the name only, the detail lines keep their quantities');
   assert(/<b>5 kg<\/b>total</.test(ph) && /<b>5 kg<\/b>total</.test(ch) && !/à préparer/.test(ph + ch), "KPI weight is in kg (5 kg) with the label total, in both modes");
   assert(!/Vérifier les paiements|verifier-paiements/.test(ph + ch) && !/en attente \(\d+ commande/.test(ph + ch), 'no "Vérifier les paiements" button and no "en attente" KPI block');
   assert((await fetch(B + '/admin/verifier-paiements', { method: 'POST', redirect: 'manual' })).status === 404, 'the verify route is gone');
@@ -279,7 +282,7 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
   const before = one('select count(*) n from orders').n; r = await post('/commander', nm);
   assert(one('select count(*) n from orders').n === before + 1 && one('select member_no from orders order by id desc limit 1').member_no === '', 'an order without a member number is accepted (stored empty)');
   // --- delivery dates replace the open/closed setting
-  const fr = (iso) => new Date(iso + 'T12:00:00Z').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' });
+  const fr = (iso) => new Date(iso + 'T12:00:00Z').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', ...(iso.slice(0, 4) === parisToday.slice(0, 4) ? {} : { year: 'numeric' }), timeZone: 'Europe/Paris' });
   const setDates = async (dates, lead) => post('/admin/campagnes/enregistrer', { id: '1', name: 'Veggie Deli', ...(lead == null ? {} : { lead_days: String(lead) }), delivery_date: dates });
   const shopText = async () => (await (await get('/boutique/veggie-deli')).text());
   const dbDates = () => rows('select date from deliveries where campaign_id = 1 order by date').map((x) => x.date);
@@ -294,10 +297,10 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
   let t = await shopText();
   assert(t.includes('Prochaine livraison : <b>' + fr(future(3)) + '</b>') && !t.includes(fr(future(30)) + '</b>') && !t.includes(fr(future(-5)) + '</b>'), 'the shop shows the NEXT delivery only: ' + fr(future(3)));
   assert(t.includes('id="cartbar"') && t.includes('id="pay"') && !t.includes('fieldset id="products"') && !t.includes('Les commandes sont fermées'), 'orders open: cart bar, pay button, no closed banner');
-  assert(!t.includes('Commandes ouvertes jusqu') && t.includes('Prochaine livraison : <b>'), 'lead time 0: just the next delivery, no deadline line');
+  assert(!t.includes('Commandes jusqu') && t.includes('Prochaine livraison : <b>'), 'lead time 0: just the next delivery, no deadline line');
   // lead time: orders close `lead` days before the delivery (3 days ahead)
   await setDates([future(3)], 3); t = await shopText();
-  assert(t.includes('id="pay"') && t.includes('Commandes ouvertes jusqu’au <b>' + fr(future(0)) + '</b> inclus') && t.includes('Livré le <b>' + fr(future(3)) + '</b>') && t.indexOf('Commandes ouvertes jusqu’au') < t.indexOf('Livré le') && !t.includes('Prochaine livraison'), 'delivery in 3 days, lead 3: still open; deadline line first, then "Livré le" (both dates bold)');
+  assert(t.includes('id="pay"') && t.includes('Commandes jusqu’au <b>' + fr(future(0)) + '</b> inclus') && t.includes('Livré le <b>' + fr(future(3)) + '</b>') && t.indexOf('Commandes jusqu’au') < t.indexOf('Livré le') && !t.includes('Prochaine livraison'), 'delivery in 3 days, lead 3: still open; deadline line first, then "Livré le" (both dates bold)');
   await setDates([future(3)], 4); t = await shopText();
   assert(!t.includes('id="pay"') && !t.includes('id="cartbar"') && t.includes('Les commandes sont fermées pour le moment') && t.includes('Prochaine livraison : <b>' + fr(future(3)) + '</b>') && t.includes('La date limite pour commander était le ' + fr(future(-1))), 'delivery in 3 days, lead 4: closed, deadline passed yesterday');
   assert(/<fieldset id="products" class="plain" disabled>/.test(t) && t.includes('<h2>Foulet nature</h2>') && t.includes('data-price=') && (t.match(/<input type="number"/g) || []).length > 10, 'closed shop stays viewable: products and prices shown, every control disabled');
@@ -375,7 +378,7 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
     t = await shopText(); assert(!notice(t), '3 kg paid: reached');
     // with a lead time the notice is on the delivery line under the deadline
     await setMin('9999', 'kg', 2); t = await shopText();
-    assert(t.indexOf('Commandes ouvertes jusqu’au') < t.indexOf('Livré le <b>' + fr(future(10)) + '</b><br>(sous réserve d’atteindre notre seuil de 9999 kg)') && t.indexOf('Livré le') > 0, 'with a lead time: "Livré le … <br>(sous réserve d’atteindre notre seuil de …)"');
+    assert(t.indexOf('Commandes jusqu’au') < t.indexOf('Livré le <b>' + fr(future(10)) + '</b><br>(sous réserve d’atteindre notre seuil de 9999 kg)') && t.indexOf('Livré le') > 0, 'with a lead time: "Livré le … <br>(sous réserve d’atteindre notre seuil de …)"');
     await setMin('', 'kg', 0); await setDates([future(30)], 0); }
   r = await fetch(B + '/admin/commandes/rembourser', { method: 'POST', redirect: 'manual', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: 'https://evil.example' }, body: `id=${bogus}` }); assert(r.status === 403, 'CSRF guard applies to the refund action');
 })().catch((e) => { console.error('ERROR', e); process.exitCode = 1; });
