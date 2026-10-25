@@ -1,6 +1,6 @@
 // Admin screens: campaigns, orders (Produits / Clients tabs), product editor shell, login.
 const { fmtWeight } = require('../weight');
-const { esc, euros, label, json, layout, frDate, thresholdText } = require('./common');
+const { esc, euros, label, json, layout, frDay, thresholdText } = require('./common');
 
 // admin weights are always grams ("84 910 g"), except the total to prepare which is in kg
 const fmtG = (g) => `${String(Math.round(g)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} g`;
@@ -81,13 +81,13 @@ const COPY_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="
 const thresholdHint = (st) => {
   const t = st.threshold; if (!t) return '';
   const cur = t.kind === 'money' ? euros(t.current) : fmtWeight(t.current);
-  return `<div class="hint">Seuil minimum : ${esc(thresholdText(t))} · ${t.reached ? `atteint (${esc(cur)})` : `pas encore atteint (${esc(cur)} commandés et payés)`}</div>`;
+  return `<div class="hint">${t.reached ? '✅' : '❌'} Vendu : ${esc(cur)} (Seuil ${esc(thresholdText(t))})</div>`;
 };
 
 function campaignsPage(list, msg = '', baseUrl = '') {
   const cards = list.map((c) => `<section class="card camp">
-<div class="camphead"><div><h2>${esc(c.name)} <span class="pill ${c.state.open ? 'open' : 'closed'}">${c.state.open ? 'Commandes ouvertes' : 'Commandes fermées'}</span></h2>
-<div class="hint">${c.state.next ? `Prochaine livraison : ${esc(frDate(c.state.next))}${c.state.open ? ` · commandes jusqu’au ${esc(frDate(c.state.deadline))} inclus` : ` · commandes terminées depuis le ${esc(frDate(c.state.deadline))}`}` : 'Aucune livraison à venir : la boutique reste visible mais ne prend pas de commande.'}</div>
+<div class="camphead"><div><h2>${esc(c.name)} <span class="pill ${c.state.open ? 'open' : 'closed'}">${c.state.open ? 'Ouverte' : 'Fermée'}</span></h2>
+<div class="hint">${c.state.next ? `Commandes : ${c.state.open ? '' : 'terminées le '}${esc(frDay(c.state.deadline))}<br>Livraison : ${esc(frDay(c.state.next))}` : 'Aucune livraison à venir : la boutique reste visible mais ne prend pas de commande.'}</div>
 ${thresholdHint(c.state)}
 <div class="hint shoplink">Lien vers la boutique : <a href="/boutique/${esc(c.slug)}" target="_blank" rel="noopener">${esc(baseUrl)}/boutique/${esc(c.slug)} ↗</a>
 <button type="button" class="ibtn copybtn" data-copy="${esc(baseUrl)}/boutique/${esc(c.slug)}" title="Copier le lien" aria-label="Copier le lien vers la boutique">${COPY_ICON}</button><span class="copied-msg" role="status"></span></div></div>

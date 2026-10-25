@@ -321,11 +321,11 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
   // admin
   html = await (await get('/admin')).text();
   assert(!html.includes('name="status"') && !html.includes('<label>État') && !/<option[^>]*>[^<]*\(fermée\)/.test(html), 'no état selector, no "(fermée)" in pickers');
-  assert(/Veggie Deli <span class="pill open">Commandes ouvertes<\/span>/.test(html) && html.includes('Prochaine livraison : ' + fr(future(2))), 'campaign card: derived "Commandes ouvertes" + next delivery');
+  assert(/Veggie Deli <span class="pill open">Ouverte<\/span>/.test(html) && html.includes('Commandes : ') && html.includes('<br>Livraison : ' + fr(future(2)).replace(/^\S+ /, '')), 'campaign card: derived "Ouverte"; "Commandes : …" then "Livraison : …" without weekday');
   assert(html.includes('name="lead_days"') && html.includes('name="delivery_date" value="' + future(2) + '"') && html.includes('name="delivery_date" value="' + future(9) + '"') && html.includes('name="delivery_date" value=""'), 'editor lists the dates, an empty row, and the lead time field');
   assert(html.includes('class="flat adddate"') && (await (await get('/assets/admin-campaigns.js')).text()).includes('adddate'), 'add-date button and its script');
   await setDates([], 0); html = await (await get('/admin')).text();
-  assert(/Veggie Deli <span class="pill closed">Commandes fermées<\/span>/.test(html) && html.includes('Aucune livraison à venir'), 'campaign card: "Commandes fermées" without a delivery ahead');
+  assert(/Veggie Deli <span class="pill closed">Fermée<\/span>/.test(html) && html.includes('Aucune livraison à venir'), 'campaign card: "Fermée" without a delivery ahead');
   html = await (await get('/admin/commandes?c=1&mode=clients')).text(); assert(!/class="pill (open|closed)"/.test(html) && !html.includes('Ouverte') && !html.includes('Fermée'), 'the campaign bar has no open/closed pill');
   r = await get('/'); html = await r.text(); assert(r.status === 200 && !html.includes('/boutique/veggie-deli') && html.includes('/boutique/noel'), 'a campaign that closed drops off the index');
   await setDates([future(30)], 0);
@@ -358,7 +358,7 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
     t = await shopText(); assert(t.includes('Prochaine livraison : <b>' + fr(future(10)) + '</b><br>(sous réserve d’atteindre notre seuil de 50 kg)'), 'not reached: the delivery line says "(sous réserve d’atteindre notre seuil de 50 kg)"');
     r = await setMin('12,5', 'kg'); assert(campaignRow().v === 12500, 'decimal comma accepted: 12,5 kg'); t = await shopText(); assert(t.includes('seuil de 12,5 kg)'), 'shown as 12,5 kg');
     r = await setMin('500', 'eur'); assert(campaignRow().k === 'money' && campaignRow().v === 50000, 'minimum of 500 € stored as cents'); t = await shopText(); assert(t.includes('seuil de 500,00 €)'), 'shown as an amount: ' + (t.match(/seuil de [^)]*\)/) || [''])[0]);
-    html = await (await get('/admin')).text(); assert(/name="min_value"[^>]*value="500"/.test(html) && /<option value="eur" selected>/.test(html) && html.includes('Seuil minimum : 500,00 € · pas encore atteint'), 'editor shows the value and unit; the card says it is not reached yet');
+    html = await (await get('/admin')).text(); assert(/name="min_value"[^>]*value="500"/.test(html) && /<option value="eur" selected>/.test(html) && html.includes('❌ Vendu : 0 kg (Seuil 500,00 €)') || html.includes('❌ Vendu : 0,00 € (Seuil 500,00 €)'), 'editor shows the value and unit; the card says it is not reached yet');
     for (const bad of ['abc', '0', '-5', '1e3']) { r = await setMin(bad, 'kg'); assert(/seuil minimum/i.test(decodeURIComponent(loc(r))) && campaignRow().v === 50000, `invalid minimum « ${bad} » refused, previous value kept`); }
     r = await post('/admin/campagnes/enregistrer', { id: '1', name: 'Veggie Deli', delivery_date: [future(10)] }); assert(campaignRow().k === 'money' && campaignRow().v === 50000, 'saving without the minimum fields leaves it as it is');
     // progress counts only PAID orders for the NEXT delivery
@@ -366,10 +366,10 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
     addOrder({ cid: 1, campaign: 'Veggie Deli', total: 30000, status: 'paid', delivery: future(40) }); addOrder({ cid: 1, campaign: 'Veggie Deli', total: 30000, status: 'pending', delivery: future(10) }); addOrder({ cid: 1, campaign: 'Veggie Deli', total: 30000, status: 'refunded', delivery: future(10) });
     t = await shopText(); assert(notice(t), 'orders for another delivery, pending ones and refunded ones do not count');
     const ok1 = addOrder({ cid: 1, campaign: 'Veggie Deli', total: 30000, status: 'paid', delivery: future(10) }); t = await shopText(); assert(notice(t), '300 € paid for this delivery: still under 500 €');
-    html = await (await get('/admin')).text(); assert(html.includes('pas encore atteint (300,00 € commandés et payés)'), 'admin card shows the progress: 300,00 €');
+    html = await (await get('/admin')).text(); assert(html.includes('❌ Vendu : 300,00 € (Seuil 500,00 €)'), 'admin card shows the progress: 300,00 €');
     addOrder({ cid: 1, campaign: 'Veggie Deli', total: 20000, status: 'paid', delivery: future(10) }); t = await shopText();
     assert(!notice(t) && t.includes('Prochaine livraison : <b>' + fr(future(10)) + '</b>'), '500 € paid: the notice disappears');
-    html = await (await get('/admin')).text(); assert(html.includes('Seuil minimum : 500,00 € · atteint (500,00 €)'), 'admin card: "atteint"');
+    html = await (await get('/admin')).text(); assert(html.includes('✅ Vendu : 500,00 € (Seuil 500,00 €)'), 'admin card: "atteint"');
     // weight minimum counts quantity x grams of paid items
     await setMin('3', 'kg'); t = await shopText(); assert(notice(t) && t.includes('seuil de 3 kg)'), 'weight minimum 3 kg: not reached (paid orders without items weigh nothing)');
     addOrder({ cid: 1, campaign: 'Veggie Deli', total: 1000, status: 'paid', delivery: future(10), item: { pid: pid1.pid, sid: pid1.sid, product: 'Foulet nature', size: '1kg', cents: 1000, qty: 2, grams: 1000 } });

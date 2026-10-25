@@ -21,9 +21,11 @@ const frDate = (iso) => {
   const d = new Date(iso + 'T12:00:00Z'), thisYear = new Date().toLocaleDateString('en-CA', { year: 'numeric', timeZone: 'Europe/Paris' });
   return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', ...(iso.slice(0, 4) === thisYear ? {} : { year: 'numeric' }), timeZone: 'Europe/Paris' });
 };
+// "5 novembre" (no weekday), with the year only when it is not the current one
+const frDay = (iso) => frDate(iso).replace(/^\S+ /, '');
 const days = (n) => `${n} jour${n > 1 ? 's' : ''}`;
 
 // "50 kg" or "500,00 €": the campaign's minimum to reach
 const thresholdText = (t) => (t.kind === 'money' ? euros(t.value) : fmtWeight(t.value));
 
-module.exports = { esc, euros, label, json, layout, frDate, days, thresholdText };
+module.exports = { esc, euros, label, json, layout, frDate, frDay, days, thresholdText };
