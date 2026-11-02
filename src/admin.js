@@ -18,6 +18,9 @@ const { paymentInfo } = require('./orders');
 
 const latestCampaign = () => db.prepare('SELECT * FROM campaigns ORDER BY id DESC LIMIT 1').get();
 const CSV_TYPE = 'text/csv; charset=utf-8';
+// A member of the Précommandes team follows the orders but may not edit campaigns or products, nor refund: refused here, and the
+// screens do not show those controls either.
+const EDIT_ONLY = (method, p) => p === '/admin/produits' || p.startsWith('/admin/api/') || p.startsWith('/admin/campagnes/') || (method === 'POST' && p === '/admin/commandes/rembourser');
 const CAMPAIGN_PAGES = ['/admin/commandes', '/admin/produits', '/admin/totaux.csv', '/admin/commandes.csv'];
 
 // POST /admin/commandes/rembourser : full refund of a paid order through HelloAsso (simulated for demo orders)
@@ -76,11 +79,13 @@ async function admin(req, res, url) {
   const p = url.pathname, post = req.method === 'POST', msg = url.searchParams.get('msg') || '';
   const campaign = campaigns.byId(url.searchParams.get('c')) || latestCampaign();
   const cid = campaign ? campaign.id : null;
-  const ctx = () => ({ campaigns: campaigns.list().reverse(), campaign });          // newest first in the picker
+  const user = req.user || { login: '', role: 'admin' }, canEdit = user.role === 'admin';
+  const ctx = () => ({ campaigns: campaigns.list().reverse(), campaign, user, canEdit });          // newest first in the picker
+  if (!canEdit && EDIT_ONLY(req.method, p)) return post ? send(res, 403, 'Accès refusé', 'text/plain; charset=utf-8') : send(res, 403, v.layout('Accès refusé', '<p>Cette page est réservée aux administrateurs.</p><p><a href="/admin">← Retour</a></p>', { admin: true }));
 
   if (!post) {
     if (CAMPAIGN_PAGES.includes(p) && !campaign) return redirect(res, msgUrl('/admin', 'Créez d’abord une campagne.'));
-    if (p === '/admin') return send(res, 200, v.campaignsPage(campaigns.list(), msg, BASE_URL));
+    if (p === '/admin') return send(res, 200, v.campaignsPage(campaigns.list(), msg, BASE_URL, user));
     if (p === '/admin/commandes') {
       const totals = reports.salesTotals(cid);
       return send(res, 200, url.searchParams.get('mode') === 'clients'

@@ -17,6 +17,22 @@ Les clés de l'API HelloAsso (sandbox) se donnent par variables d'environnement,
 HELLOASSO_CLIENT_ID=… HELLOASSO_CLIENT_SECRET=… npm start
 ```
 
+## Comptes de l'administration
+
+La connexion à `/admin` utilise les comptes du site des membres (identifiant ou e-mail + le même mot de passe). `scripts/export-users.js`
+interroge Metabase et écrit `users.json` (identifiant, e-mail, hash bcrypt, rôle) :
+
+- rôle **admin** : les membres de la formation « Informatique », plus les comptes non membres `mahaut` et `emma` ;
+- rôle **precommandes** : les membres de la formation « Précommandes ». Ils suivent les commandes (étapes, exports) mais ne peuvent ni
+  modifier les campagnes ou les produits, ni rembourser.
+
+```
+node scripts/export-users.js                  # écrit ./users.json (adresse et clé Metabase : ../metabase/api.txt ou METABASE_URL + METABASE_API_KEY)
+```
+
+Relancer le script quand les formations ou les mots de passe changent, puis copier `users.json` à côté de la base sur le serveur (lu à nouveau
+tout seul, sans redémarrage ; un compte retiré perd sa session aussitôt). Le fichier contient des hashes : ne jamais le versionner (il est dans `.gitignore`).
+
 ## Réglages (variables d'environnement)
 
 | Variable | Rôle |
@@ -24,7 +40,8 @@ HELLOASSO_CLIENT_ID=… HELLOASSO_CLIENT_SECRET=… npm start
 | `PORT`, `HOST` | port et adresse d'écoute (8443, 127.0.0.1) |
 | `BASE_URL` | adresse publique, éventuellement avec un préfixe |
 | `PLAIN_HTTP=1` | http simple derrière un proxy qui fait déjà le TLS |
-| `ADMIN_PASSWORD` | mot de passe de l'administration |
+| `ADMIN_PASSWORD` | mot de passe partagé de l'administration, utilisable avec l'identifiant `admin` (secours) |
+| `USERS_FILE` | comptes autorisés (`users.json`, à côté de la base par défaut), voir « Comptes de l'administration » |
 | `DB_FILE`, `UPLOAD_DIR` | base SQLite et dossier des images téléversées |
 | `HELLOASSO_CLIENT_ID`, `HELLOASSO_CLIENT_SECRET` | clés de l'API HelloAsso |
 | `HELLOASSO_API`, `HELLOASSO_ORG` | adresse de l'API (sandbox par défaut) et organisation (`l-elefan`) |
@@ -46,7 +63,9 @@ src/
   config.js       réglages (variables d'environnement) et chemins
   shop.js         pages publiques : campagnes, boutique, commande, retour de paiement
   admin.js        pages d'administration : campagnes, commandes, produits, exports, remboursements
-  auth.js         mot de passe de l'administration (cookie signé)
+  auth.js         connexion à l'administration (cookie signé, rôles)
+  users.js        comptes autorisés (users.json), vérification bcrypt
+  vendor/         bcryptjs (licence MIT) : vérifie les mots de passe bcrypt du site des membres
   assets.js       fichiers statiques et images
   reports.js      requêtes de ventes et exports CSV
   orders.js       état d'une commande côté HelloAsso
@@ -54,7 +73,7 @@ src/
   db.js, catalog.js, campaigns.js, weight.js, basepath.js, http.js
   views/          gabarits HTML : common (page, dates), shop (clients), admin
 public/           feuille de style, scripts du navigateur, polices, photos des produits
-scripts/          seed-demo.js (commandes de démonstration)
+scripts/          seed-demo.js (commandes de démonstration), export-users.js (comptes de l'administration)
 tests/            suites de tests
 ```
 

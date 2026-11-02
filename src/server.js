@@ -2,7 +2,7 @@
 //   npm start  ->  https://localhost:8443  (self-signed certificate: HelloAsso requires https return URLs)
 //   /  (or /precommandes)  the campaigns open to the public    /boutique/<slug>  the shop of one campaign
 //   /admin            campaigns: create and manage (main admin page; see admin.js for the other admin pages)
-// /admin asks for a password (no user name) when ADMIN_PASSWORD is set, otherwise it is open: only use that locally.
+// /admin asks for a login (members' accounts, see users.js) or the shared ADMIN_PASSWORD; with neither it is open: only use that locally.
 const https = require('node:https');
 const http = require('node:http');
 const fs = require('node:fs');
@@ -13,7 +13,7 @@ const { BASE_URL, PORT, HOST, PLAIN_HTTP, ADMIN_PASSWORD, ROOT } = config;
 const { BASE_PATH } = require('./basepath');
 const { send, redirect } = require('./http');
 const { serveStatic } = require('./assets');
-const { isAdmin, loginRoute } = require('./auth');
+const { session, authRequired, loginRoute, logoutRoute } = require('./auth');
 const { admin } = require('./admin');
 const shop = require('./shop');
 const v = require('./views');
@@ -36,8 +36,11 @@ async function handle(req, res) {
   if (pathname.startsWith('/admin')) {
     // CSRF guard: browsers send Origin on cross-site POSTs
     if (req.method === 'POST' && req.headers.origin && req.headers.origin !== new URL(BASE_URL).origin) return send(res, 403, 'Forbidden', 'text/plain');
-    if (pathname === '/admin/connexion' && ADMIN_PASSWORD && (get || req.method === 'POST')) return loginRoute(req, res);
-    if (!isAdmin(req)) return get ? redirect(res, '/admin/connexion') : send(res, 401, 'Connexion requise', 'text/plain; charset=utf-8');
+    if (pathname === '/admin/connexion' && authRequired() && (get || req.method === 'POST')) return loginRoute(req, res);
+    if (pathname === '/admin/deconnexion' && req.method === 'POST') return logoutRoute(req, res);
+    const who = session(req);
+    if (!who) return get ? redirect(res, '/admin/connexion') : send(res, 401, 'Connexion requise', 'text/plain; charset=utf-8');
+    req.user = who;
     return admin(req, res, url);
   }
   if (get && (pathname === '/' || /^\/precommandes\/?$/.test(pathname))) return shop.home(res);
@@ -53,5 +56,5 @@ const onRequest = (req, res) =>
 const server = PLAIN_HTTP ? http.createServer(onRequest) : https.createServer(tlsFiles(), onRequest);
 server.listen(PORT, HOST, () => {
   console.log(`Serving ${BASE_URL}${PLAIN_HTTP ? `  (plain http on ${HOST}:${PORT}, TLS handled by the proxy)` : '  (accept the self-signed certificate warning once)'}`);
-  console.log(`Admin: ${BASE_URL}/admin   ${ADMIN_PASSWORD ? '(password: $ADMIN_PASSWORD)' : '(no password)'}`);
+  console.log(`Admin: ${BASE_URL}/admin   ${authRequired() ? '(login required)' : '(open: no accounts, no password)'}`);
 });

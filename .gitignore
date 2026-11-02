@@ -11,3 +11,8 @@ tests/out*.txt
 
 precommandes.env
 data/
+
+# member accounts exported for the admin login (password hashes) and the session signing key
+users.json
+users.json.tmp
+session.key
