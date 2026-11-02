@@ -124,13 +124,14 @@ ${canEdit ? `<section class="card newcamp"><h2>Nouvelle campagne</h2><form metho
 <div class="actions"><button class="primary">Créer la campagne</button></div></form></section>` : ''}`, { admin: true, script: '<script src="/assets/admin-campaigns.js"></script>' });
 }
 
-// Admin login page: login (user name or e-mail) and password.
+// Admin login page, worded like the members site: user name or e-mail, and the password.
 const loginPage = (error = '') => layout('Connexion', `<h1 class="pagetitle">Administration des précommandes</h1>
 <section class="card newcamp"><form method="post" action="/admin/connexion" class="cform">
 ${error ? `<p class="alert">${esc(error)}</p>` : ''}
-<label>Identifiant ou e-mail<input type="text" name="login" required autofocus autocomplete="username" autocapitalize="none" spellcheck="false"></label>
+<label>Nom d’utilisateur ou courriel<input type="text" name="login" required autofocus autocomplete="username" autocapitalize="none" spellcheck="false"></label>
 <label>Mot de passe<input type="password" name="password" required autocomplete="current-password"></label>
 <p class="hint">Les mêmes identifiants que sur le site des membres.</p>
-<div class="actions"><button class="primary">Entrer</button></div></form></section>`, { admin: true });
+<div class="actions"><button class="primary">Entrer</button></div>
+<p class="hint"><a href="https://membres.lelefan.org/resetting/request" target="_blank" rel="noopener">Mot de passe ou identifiant oublié ?</a></p></form></section>`, { admin: true });
 
 module.exports = { loginPage, campaignsPage, dashboard, ordersPage, productsPage };

@@ -26,7 +26,11 @@ function all() {
 const exists = () => all().length > 0;
 const norm = (s) => String(s ?? '').trim().toLowerCase();
 const byLogin = (login) => all().find((u) => norm(u.login) === norm(login)) || null;
-const find = (who) => { const k = norm(who); return k ? all().find((u) => norm(u.login) === k || (u.email && norm(u.email) === k)) || null : null; };
+// like the members site (FOSUserBundle "username_email" provider): an entry with an @ is an e-mail, anything else a user name; case ignored
+const find = (who) => {
+  const k = norm(who); if (!k) return null;
+  return all().find((u) => (k.includes('@') ? u.email && norm(u.email) === k : norm(u.login) === k)) || null;
+};
 
 // A hash that matches nothing: unknown accounts cost the same time as wrong passwords.
 let dummy = null;

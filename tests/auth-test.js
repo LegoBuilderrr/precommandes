@@ -41,6 +41,12 @@ const loginAs = async (who, password) => { const r = await post('/admin/connexio
   const paid = Number(d.prepare("insert into orders (campaign_id,campaign,first_name,last_name,member_no,email,total_cents,status,demo,paid_at) values (?,'Veggie Deli','Pat','Test','1','p@x.fr',1000,'paid',1,datetime('now'))").run(cid).lastInsertRowid);
   d.prepare("insert into order_items (order_id,product,variant,size,unit_cents,qty,grams) values (?,'Faux-cisses','aux herbes','160gr',500,2,160)").run(paid);
   r = await get(`/admin/commandes?c=${cid}&mode=clients`, { Cookie: a.cookie }); html = await r.text(); assert(html.includes('class="refund"') && html.includes('class="stepsel"'), 'administrator sees the refund button and the step menu');
+  // like the members site: an entry containing @ is an e-mail, anything else a user name
+  r = await post('/admin/connexion', { login: 'claire.d@example.org', password: 'mdp-admin' }); assert(r.status === 303, 'e-mail login works');
+  r = await post('/admin/connexion', { login: 'CDELIGEON', password: 'mdp-admin' }); assert(r.status === 303, 'user name login works, any case');
+  r = await post('/admin/connexion', { login: ' cdeligeon ', password: 'mdp-admin' }); assert(r.status === 303, 'surrounding spaces ignored');
+  r = await post('/admin/connexion', { login: 'sophie@example.org', password: 'mdp-admin' }); assert(r.status === 401, 'the e-mail of one account with the password of another is refused');
+  r = await get('/admin/connexion'); html = await r.text(); assert(html.includes('Nom d’utilisateur ou courriel') && html.includes('https://membres.lelefan.org/resetting/request'), 'login page worded like the members site, with the forgotten-password link');
   // login by e-mail, whatever the case
   const em = await loginAs('CLAIRE.d@example.org', 'mdp-admin'); assert(em.r.status === 303 && /^admin_session=/.test(em.cookie), 'login also works with the e-mail address, any case');
   // a Précommandes member: orders only
