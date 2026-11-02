@@ -2,6 +2,9 @@
 const { fmtWeight } = require('../weight');
 const { esc, euros, label, layout, frDate, days, thresholdText } = require('./common');
 
+// a named price shows its quantity next to it: "x2 (320gr)"
+const sizeText = (name, qty) => (name ? `${name} (${qty})` : qty);
+
 // ---------- public order form ----------
 function stepper(name, s, lbl, values) {
   const q = Number(values[name]) > 0 ? Number(values[name]) : 0;
@@ -14,13 +17,13 @@ function productCard(p, values) {
   let grid;
   if (p.variants.length) {
     grid = '<div class="scroll"><table class="grid"><tr><th></th>' +
-      p.sizes.map((s) => `<th>${esc(s.name || s.label)}<small>${euros(s.price_cents)}</small></th>`).join('') + '</tr>' +
+      p.sizes.map((s) => `<th>${esc(sizeText(s.name, s.label))}<small>${euros(s.price_cents)}</small></th>`).join('') + '</tr>' +
       p.variants.map((v) => `<tr><th class="vname">${esc(v.name)}</th>` +
-        p.sizes.map((s) => `<td data-size="${esc(s.name || s.label)}" data-price="${euros(s.price_cents)}">${stepper(`q_${s.id}_${v.id}`, s, label(p.name, v.name, s.name || s.label), values)}</td>`).join('') + '</tr>').join('') +
+        p.sizes.map((s) => `<td data-size="${esc(sizeText(s.name, s.label))}" data-price="${euros(s.price_cents)}">${stepper(`q_${s.id}_${v.id}`, s, label(p.name, v.name, sizeText(s.name, s.label)), values)}</td>`).join('') + '</tr>').join('') +
       '</table></div>';
   } else {
     grid = '<div class="opts">' + p.sizes.map((s) =>
-      `<div class="opt"><span class="osize">${esc(s.name || s.label)}</span><small>${euros(s.price_cents)}</small>${stepper(`q_${s.id}_0`, s, label(p.name, s.name || s.label), values)}</div>`).join('') + '</div>';
+      `<div class="opt"><span class="osize">${esc(sizeText(s.name, s.label))}</span><small>${euros(s.price_cents)}</small>${stepper(`q_${s.id}_0`, s, label(p.name, sizeText(s.name, s.label)), values)}</div>`).join('') + '</div>';
   }
   const img = p.image_url ? `<a class="pimglink" href="${esc(p.image_url)}" target="_blank" rel="noopener" title="Agrandir"><img class="pimg" src="${esc(p.image_url)}" alt="${esc(p.name)}" width="110" height="110" loading="lazy"></a>` : '';
   const info = p.info_url ? `<a class="info" href="${esc(p.info_url)}" target="_blank" rel="noopener noreferrer">En savoir plus ↗</a>` : '';
@@ -90,7 +93,7 @@ function returnPage(o, status, items, pay, slug = '') {
     refunded: ['warn', 'Commande remboursée', `Cette commande a été remboursée${o.refunded_at ? ` le ${paris(`${o.refunded_at.replace(' ', 'T')}Z`)}` : ''}. Le délai d’arrivée des fonds dépend de votre banque.`],
     refunding: ['warn', 'Remboursement en cours', 'Un remboursement est en cours de traitement pour cette commande.'],
   }[status] || ['alert', 'Statut inconnu', ''];
-  const lines = items.map((i) => `<tr><td>${esc(label(i.product, i.variant))}<td>${esc(i.size_name || i.size)}<td class="num">${euros(i.unit_cents)}<td class="num">${i.qty}<td class="num">${euros(i.unit_cents * i.qty)}</tr>`).join('');
+  const lines = items.map((i) => `<tr><td>${esc(label(i.product, i.variant))}<td>${esc(sizeText(i.size_name, i.size))}<td class="num">${euros(i.unit_cents)}<td class="num">${i.qty}<td class="num">${euros(i.unit_cents * i.qty)}</tr>`).join('');
   const units = items.reduce((n, i) => n + i.qty, 0);
   const grams = items.reduce((n, i) => n + i.qty * (i.grams || 0), 0);
   const means = { Card: 'Carte bancaire', Sepa: 'Prélèvement SEPA' }[pay && pay.means] || (pay && pay.means) || '';

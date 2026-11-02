@@ -75,7 +75,9 @@ function create(input) {
   if (input.copyFrom && !copyFrom) return { error: 'La campagne à copier n’existe pas.' };
   db.exec('BEGIN');
   try {
-    const id = Number(db.prepare('INSERT INTO campaigns (name, slug) VALUES (?,?)').run(c.name, uniqueSlug(slugify(c.name))).lastInsertRowid);
+    // a duplicate keeps the description, order lead time and minimum of the original, but no delivery dates
+    const id = Number(db.prepare('INSERT INTO campaigns (name, slug, header_html, lead_days, min_kind, min_value) VALUES (?,?,?,?,?,?)')
+      .run(c.name, uniqueSlug(slugify(c.name)), copyFrom ? copyFrom.header_html : '', copyFrom ? copyFrom.lead_days : 0, copyFrom ? copyFrom.min_kind : '', copyFrom ? copyFrom.min_value : 0).lastInsertRowid);
     if (copyFrom) copyCatalog(copyFrom.id, id);
     db.exec('COMMIT');
     return { id };

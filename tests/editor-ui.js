@@ -115,7 +115,7 @@ const loadTree = async () => JSON.parse((await (await fetch(B + '/admin/produits
   assert($('#status').textContent === 'Enregistré ✓' && $('#save').disabled, 'saved: ' + $('#status').textContent);
   // a price can have a name, shown to customers instead of its weight (e.g. 160 g -> "x2")
   { const card = $$('.pcard').find((c) => $('.pname', c).value === 'Tofu fumé');
-    assert($('.sname', card) && $('.sname', card).placeholder === 'Nom (ex. x2)' && $$('.srow', card).every((r) => $('.sname', r)), 'every price row has an optional name field');
+    assert($('.sname', card) && $('.sname', card).placeholder === 'Nom (optionnel)' && $$('.srow', card).every((r) => $('.sname', r)), 'every price row has an optional name field');
     type($('.sname', card), 'x2'); assert(!$('#save').disabled, 'typing a name marks the editor as changed');
     $('#save').click(); await new Promise((r) => setTimeout(r, 600));
     const saved = (await loadTree()).find((p) => p.name === 'Tofu fumé');

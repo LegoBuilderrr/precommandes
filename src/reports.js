@@ -37,10 +37,11 @@ function itemsByOrder() {
 const totalsCsv = (campaignId) => csv([['Produit', 'Option', 'Nom du prix', 'Poids (g)', 'Quantité', 'Poids total (g)'],
   ...salesByProduct(campaignId).map((r) => [r.product, r.variant, r.size_name, r.grams ?? r.size, r.paid_qty, r.paid_grams])]);
 
+const STEP_FR = { prepared: 'Préparée', contacted: 'Contactée', collected: 'Retirée' };
 const ordersCsv = (campaignId) => {
   const rows = db.prepare(`SELECT o.*, oi.product, oi.variant, oi.size, oi.size_name, oi.qty, oi.unit_cents, oi.grams FROM orders o JOIN order_items oi ON oi.order_id = o.id WHERE o.campaign_id = ? ORDER BY o.id, oi.id`).all(campaignId);
-  return csv([['Commande', 'Date', 'Statut', 'Prénom', 'Nom', 'Email', 'Commentaire', 'Produit', 'Option', 'Nom du prix', 'Poids (g)', 'Quantité', 'Poids total (g)', 'Prix unitaire (€)', 'Ligne (€)'],
-    ...rows.map((r) => [r.number ?? '', r.created_at, r.status, r.first_name, r.last_name, r.email, r.comment, r.product, r.variant, r.size_name, r.grams ?? r.size, r.qty, r.grams == null ? '' : r.grams * r.qty, eur(r.unit_cents), eur(r.unit_cents * r.qty)])]);
+  return csv([['Commande', 'Date', 'Statut', 'Prénom', 'Nom', 'Email', 'Commentaire', 'Produit', 'Option', 'Nom du prix', 'Poids (g)', 'Quantité', 'Poids total (g)', 'Prix unitaire (€)', 'Ligne (€)', 'Étape'],
+    ...rows.map((r) => [r.number ?? '', r.created_at, r.status, r.first_name, r.last_name, r.email, r.comment, r.product, r.variant, r.size_name, r.grams ?? r.size, r.qty, r.grams == null ? '' : r.grams * r.qty, eur(r.unit_cents), eur(r.unit_cents * r.qty), STEP_FR[r.step] || ''])]);
 };
 
 module.exports = { salesByProduct, salesTotals, paymentsPerDay, ordersOf, itemsByOrder, totalsCsv, ordersCsv };

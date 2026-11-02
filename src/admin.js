@@ -42,6 +42,15 @@ async function refundOrder(req, res) {
   return back(`HelloAsso a refusé le remboursement de la commande n°${o.number} (code ${r.status || 'réseau'}). La commande reste payée.`);
 }
 
+// POST /admin/commandes/etape : the volunteers' follow-up of a paid order (Payée / Préparée / Contactée / Retirée), saved as soon as it is picked
+const STEPS = { paid: '', prepared: 'prepared', contacted: 'contacted', collected: 'collected' };
+async function setStep(req, res) {
+  const f = await readForm(req), step = STEPS[f.get('step')];
+  if (step === undefined) return sendJson(res, 400, { ok: false, error: 'Étape inconnue.' });
+  const r = db.prepare("UPDATE orders SET step = ? WHERE id = ? AND status = 'paid'").run(step, Number(f.get('id')) || 0);
+  return r.changes ? sendJson(res, 200, { ok: true }) : sendJson(res, 409, { ok: false, error: 'Seule une commande payée peut changer d’étape.' });
+}
+
 // POST /admin/api/televerser : a picture for a product (kept in UPLOAD_DIR, served as /uploads/<name>)
 async function uploadPicture(req, res) {
   let buf;
@@ -83,6 +92,7 @@ async function admin(req, res, url) {
     if (p === '/admin/commandes.csv') return send(res, 200, reports.ordersCsv(cid), CSV_TYPE, download('commandes.csv'));
   } else {
     if (p === '/admin/commandes/rembourser') return refundOrder(req, res);
+    if (p === '/admin/commandes/etape') return setStep(req, res);
     if (p === '/admin/campagnes/creer') {
       const f = await readForm(req);
       const r = campaigns.create({ name: f.get('name'), copyFrom: f.get('copyFrom') });

@@ -10,6 +10,7 @@ const orderWeight = (items = []) => { const g = items.reduce((n, i) => n + i.qty
 // prices sold by the unit / free text keep their label
 const sizeG = (size, grams, name = '') => { const g = grams == null ? size : fmtG(grams); return name ? (grams == null ? name : `${name} (${g})`) : g; };
 const lineText = (i) => `${i.qty} × ${esc(label(i.product, i.variant, sizeG(i.size, i.grams, i.size_name)))}`;
+const STEP_OPTIONS = [['', 'Payée'], ['prepared', 'Préparée'], ['contacted', 'Contactée'], ['collected', 'Retirée'], ['refunded', 'Remboursée']];
 const STATUS_FR = { pending: 'En attente', paid: 'Payée', failed: 'Échec', refunding: 'Remboursement en cours', refunded: 'Remboursée' };
 
 // Campaign picker, shown prominently at the top of every campaign-scoped admin page (there is no "all campaigns" view).
@@ -59,11 +60,15 @@ function ordersPage(orders, itemsByOrder, msg, ctx, k) {
   const nUnpaid = orders.filter((o) => UNPAID.includes(o.status)).length;
   const rows = orders.map((o) => {
     const refund = o.status === 'paid'
-      ? `<form method="post" action="/admin/commandes/rembourser" data-confirm="Rembourser intégralement la commande n°${o.number} (${euros(o.total_cents)}) à ${esc(o.first_name)} ${esc(o.last_name)} ? Cette action est définitive." onsubmit="return confirm(this.dataset.confirm)"><input type="hidden" name="id" value="${o.id}"><button class="refund">↩ Rembourser</button></form>`
-      : o.status === 'refunded' && o.refunded_at ? `<small class="hint">le ${esc(o.refunded_at)}</small>` : '';
+      ? `<form method="post" action="/admin/commandes/rembourser" class="refundform" data-confirm="Rembourser intégralement la commande n°${o.number} (${euros(o.total_cents)}) à ${esc(o.first_name)} ${esc(o.last_name)} ? Cette action est définitive." onsubmit="return confirm(this.dataset.confirm)"><input type="hidden" name="id" value="${o.id}"><button class="refund">↩ Rembourser</button></form>`
+      : '';
+    // a paid order is followed by hand (menu saved on change); the other statuses are plain text
+    const status = o.status === 'paid'
+      ? `<select class="stepsel" data-id="${o.id}" data-prev="${esc(o.step || '')}" aria-label="Étape de la commande n°${o.number}">${STEP_OPTIONS.map(([v, t]) => `<option value="${v}"${v === (o.step || '') ? ' selected' : ''}>${t}</option>`).join('')}</select><span class="stepmsg" role="status"></span>`
+      : `${esc(STATUS_FR[o.status] || o.status)}${o.status === 'refunded' && o.refunded_at ? `<br><small class="hint">le ${esc(o.refunded_at)}</small>` : ''}`;
     return `<tr${UNPAID.includes(o.status) ? ' class="unpaid"' : ''}><td>${o.number ?? '—'}${o.demo ? '<br><small class="pill demo">démo</small>' : ''}<td>${esc(o.created_at)}<td>${esc(o.first_name)} ${esc(o.last_name)}<br>${esc(o.email)}` +
-      `<td>${(itemsByOrder.get(o.id) || []).map(lineText).join('<br>')}${orderWeight(itemsByOrder.get(o.id))}${o.comment ? `<br><i>${esc(o.comment)}</i>` : ''}<td class="num">${euros(o.total_cents)}` +
-      `<td class="st ${esc(o.status)}">${esc(STATUS_FR[o.status] || o.status)}<br>${refund}</tr>`;
+      `<td>${(itemsByOrder.get(o.id) || []).map(lineText).join('<br>')}${orderWeight(itemsByOrder.get(o.id))}${o.comment ? `<br><i>${esc(o.comment)}</i>` : ''}<td class="num">${euros(o.total_cents)}${refund ? `<br>${refund}` : ''}` +
+      `<td class="st ${esc(o.status)}">${status}</tr>`;
   }).join('');
   return layout('Commandes', `<h1>Commandes</h1>${msg ? `<p class="note">${esc(msg)}</p>` : ''}
 ${kpis(k)}
@@ -72,7 +77,7 @@ ${tabs(cid, 'clients')}
 <div class="ordwrap"><table class="orders"><tr><th>N°<th>Date<th>Client<th>Articles<th class="num">Total<th>Statut</tr>${rows}${
     !orders.length ? '<tr><td colspan="6">Aucune commande.</tr>' : nUnpaid === orders.length ? '<tr class="paidnone"><td colspan="6">Aucune commande payée.</tr>' : ''}</table>
 <label class="showpending"><input type="checkbox" id="showpending"> Voir les commandes en attente (${nUnpaid})</label></div>`,
-  { admin: true, bar: campaignBar(ctx, '/admin/commandes', 'clients') });
+  { admin: true, bar: campaignBar(ctx, '/admin/commandes', 'clients'), script: '<script src="/assets/admin-orders.js"></script>' });
 }
 
 const COPY_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"/></svg>';
@@ -81,13 +86,13 @@ const COPY_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="
 const thresholdHint = (st) => {
   const t = st.threshold; if (!t) return '';
   const cur = t.kind === 'money' ? euros(t.current) : fmtWeight(t.current);
-  return `<div class="hint">${t.reached ? '✅' : '❌'} Vendu : ${esc(cur)} (Seuil ${esc(thresholdText(t))})</div>`;
+  return `<div class="hint">Vendu : ${esc(cur)} (${t.reached ? '✅' : '❌'} Seuil ${esc(thresholdText(t))})</div>`;
 };
 
 function campaignsPage(list, msg = '', baseUrl = '') {
   const cards = list.map((c) => `<section class="card camp">
 <div class="camphead"><div><h2>${esc(c.name)} <span class="pill ${c.state.open ? 'open' : 'closed'}">${c.state.open ? 'Ouverte' : 'Fermée'}</span></h2>
-<div class="hint">${c.state.next ? `Commandes : ${c.state.open ? '' : 'terminées le '}${esc(frDay(c.state.deadline))}<br>Livraison : ${esc(frDay(c.state.next))}` : 'Aucune livraison à venir : la boutique reste visible mais ne prend pas de commande.'}</div>
+<div class="hint">${c.state.next ? `Clôture commandes : ${esc(frDay(c.state.deadline))}<br>Livraison : ${esc(frDay(c.state.next))}` : 'Aucune livraison à venir : la boutique reste visible mais ne prend pas de commande.'}</div>
 ${thresholdHint(c.state)}
 <div class="hint shoplink">Lien vers la boutique : <a href="/boutique/${esc(c.slug)}" target="_blank" rel="noopener">${esc(baseUrl)}/boutique/${esc(c.slug)} ↗</a>
 <button type="button" class="ibtn copybtn" data-copy="${esc(baseUrl)}/boutique/${esc(c.slug)}" title="Copier le lien" aria-label="Copier le lien vers la boutique">${COPY_ICON}</button><span class="copied-msg" role="status"></span></div></div>
@@ -109,7 +114,7 @@ ${thresholdHint(c.state)}
 <h2>Campagnes (${list.length})</h2>${cards || '<p>Aucune campagne.</p>'}
 <section class="card newcamp"><h2>Nouvelle campagne</h2><form method="post" action="/admin/campagnes/creer" class="cform">
 <label>Nom *<input type="text" name="name" required maxlength="80" placeholder="ex. Noël 2026"></label>
-<label>Produits de départ<select name="copyFrom"><option value="">Aucun : campagne vide</option>${list.map((c) => `<option value="${c.id}">Copier les produits de « ${esc(c.name)} »</option>`).join('')}</select></label>
+<label>Dupliquer une campagne<select name="copyFrom"><option value="">Aucune : campagne vide</option>${list.map((c) => `<option value="${c.id}">Dupliquer « ${esc(c.name)} »</option>`).join('')}</select></label>
 <div class="actions"><button class="primary">Créer la campagne</button></div></form></section>`, { admin: true, script: '<script src="/assets/admin-campaigns.js"></script>' });
 }
 

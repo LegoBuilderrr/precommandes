@@ -10,6 +10,7 @@ const ASSETS = {   // url -> [file in public/, content type]
   '/assets/style.css': ['style.css', 'text/css; charset=utf-8'],
   '/assets/order.js': ['order.js', 'text/javascript; charset=utf-8'],
   '/assets/admin-products.js': ['admin-products.js', 'text/javascript; charset=utf-8'],
+  '/assets/admin-orders.js': ['admin-orders.js', 'text/javascript; charset=utf-8'],
   '/assets/admin-campaigns.js': ['admin-campaigns.js', 'text/javascript; charset=utf-8'],
   '/assets/favicon.png': ['favicon.png', 'image/png'],
   '/fonts/raleway-400.woff2': ['fonts/raleway-400.woff2', 'font/woff2'],

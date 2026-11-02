@@ -253,7 +253,7 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
   const heavy = addOrder({ cid: 1, campaign: 'Veggie Deli', total: 5408, item: { pid: fp.pid, sid: fp.sid, product: 'Foulet nature', size: '2,5kg', cents: 2704, qty: 2, grams: 2500 } });
   const cellsOf = (csvText) => csvText.replace(/^\uFEFF/, '').trim().split(/\r?\n/).map((l) => l.split(';').map((c) => c.replace(/^"|"$/g, '')));
   const oc = cellsOf(await (await get('/admin/commandes.csv?c=1')).text()), tc = cellsOf(await (await get('/admin/totaux.csv?c=1')).text());
-  assert(oc[0].join('|') === 'Commande|Date|Statut|Prénom|Nom|Email|Commentaire|Produit|Option|Nom du prix|Poids (g)|Quantité|Poids total (g)|Prix unitaire (€)|Ligne (€)', 'commandes.csv columns: ' + oc[0].join('|'));
+  assert(oc[0].join('|') === 'Commande|Date|Statut|Prénom|Nom|Email|Commentaire|Produit|Option|Nom du prix|Poids (g)|Quantité|Poids total (g)|Prix unitaire (€)|Ligne (€)|Étape', 'commandes.csv columns: ' + oc[0].join('|'));
   assert(tc[0].join('|') === 'Produit|Option|Nom du prix|Poids (g)|Quantité|Poids total (g)', 'totaux.csv columns: ' + tc[0].join('|'));
   const rawO = (await (await get('/admin/commandes.csv?c=1')).text()), rawT = (await (await get('/admin/totaux.csv?c=1')).text());
   assert(!/Campagne|Veggie Deli|Noël/.test(rawO + rawT), 'no campaign name or column in either CSV');
@@ -321,7 +321,7 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
   // admin
   html = await (await get('/admin')).text();
   assert(!html.includes('name="status"') && !html.includes('<label>État') && !/<option[^>]*>[^<]*\(fermée\)/.test(html), 'no état selector, no "(fermée)" in pickers');
-  assert(/Veggie Deli <span class="pill open">Ouverte<\/span>/.test(html) && html.includes('Commandes : ') && html.includes('<br>Livraison : ' + fr(future(2)).replace(/^\S+ /, '')), 'campaign card: derived "Ouverte"; "Commandes : …" then "Livraison : …" without weekday');
+  assert(/Veggie Deli <span class="pill open">Ouverte<\/span>/.test(html) && html.includes('Clôture commandes : ') && html.includes('<br>Livraison : ' + fr(future(2)).replace(/^\S+ /, '')), 'campaign card: derived "Ouverte"; "Clôture commandes : …" then "Livraison : …" without weekday');
   assert(html.includes('name="lead_days"') && html.includes('name="delivery_date" value="' + future(2) + '"') && html.includes('name="delivery_date" value="' + future(9) + '"') && html.includes('name="delivery_date" value=""'), 'editor lists the dates, an empty row, and the lead time field');
   assert(html.includes('class="flat adddate"') && (await (await get('/assets/admin-campaigns.js')).text()).includes('adddate'), 'add-date button and its script');
   await setDates([], 0); html = await (await get('/admin')).text();
@@ -335,7 +335,7 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
     fn.sizes[0].name = 'x2'; let jj = await save(1, tr);
     assert(jj.ok && one('select name from sizes where id=?', w0.id).name === 'x2' && one('select label from sizes where id=?', w0.id).label === w0.label, 'price name saved next to the weight: ' + JSON.stringify(jj).slice(0, 80));
     t = await shopText(); const idx = t.indexOf('<h2>Foulet nature</h2>'); const card = t.slice(idx, t.indexOf('</section>', idx));
-    assert(card.includes('<span class="osize">x2</span>') && !card.includes('<span class="osize">' + w0.label + '</span>') && card.includes('aria-label="Foulet nature x2"') && card.includes('data-label="Foulet nature x2"'), 'shop shows the name instead of the weight (and uses it in the cart label)');
+    assert(card.includes('<span class="osize">x2 (' + w0.label + ')</span>') && card.includes('aria-label="Foulet nature x2 (' + w0.label + ')"'), 'shop shows the name with its quantity in parentheses (also in the cart label)');
     assert(card.includes(`data-grams="${w0.grams}"`), 'the weight is still behind it (totals stay right)');
     tr = await treeOf(1); tr.find((p) => p.name === 'Foulet nature').sizes[0].name = 'y'.repeat(31); jj = await save(1, tr);
     assert(!jj.ok && /maximum 30/.test(jj.error), 'a name over 30 characters is refused: ' + jj.error);
@@ -344,7 +344,7 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
     html = await (await get('/admin/commandes?c=1&mode=clients')).text(); assert(/1 × Foulet nature x2 \(\d[\d ]* g\)/.test(html), 'admin Clients tab: "1 × Foulet nature x2 (200 g)"');
     const ocsv = cellsOf(await (await get('/admin/commandes.csv?c=1')).text()), tcsv = cellsOf(await (await get('/admin/totaux.csv?c=1')).text());
     assert(ocsv.some((c) => c[0] === String(numOf(oid)) && c[9] === 'x2' && c[10] === String(w0.grams)) && tcsv.some((c) => c[0] === 'Foulet nature' && c[2] === 'x2' && c[3] === String(w0.grams)), 'both CSVs have the name in "Nom du prix" next to the weight in grams');
-    html = await (await get('/retour?o=' + oid)).text(); assert(html.includes('<td>x2<td'), 'the confirmation page lists the name');
+    html = await (await get('/retour?o=' + oid)).text(); assert(html.includes('<td>x2 (' + w0.label + ')<td'), 'the confirmation page lists the name and its quantity');
     tr = await treeOf(1); tr.find((p) => p.name === 'Foulet nature').sizes[0].name = ''; jj = await save(1, tr);
     t = await shopText(); assert(jj.ok && t.includes('<span class="osize">' + w0.label + '</span>'), 'without a name the shop shows the weight again');
     db().prepare('delete from orders where id=?').run(oid); }
@@ -358,7 +358,7 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
     t = await shopText(); assert(t.includes('Prochaine livraison : <b>' + fr(future(10)) + '</b><br>(sous réserve d’atteindre notre seuil de 50 kg)'), 'not reached: the delivery line says "(sous réserve d’atteindre notre seuil de 50 kg)"');
     r = await setMin('12,5', 'kg'); assert(campaignRow().v === 12500, 'decimal comma accepted: 12,5 kg'); t = await shopText(); assert(t.includes('seuil de 12,5 kg)'), 'shown as 12,5 kg');
     r = await setMin('500', 'eur'); assert(campaignRow().k === 'money' && campaignRow().v === 50000, 'minimum of 500 € stored as cents'); t = await shopText(); assert(t.includes('seuil de 500,00 €)'), 'shown as an amount: ' + (t.match(/seuil de [^)]*\)/) || [''])[0]);
-    html = await (await get('/admin')).text(); assert(/name="min_value"[^>]*value="500"/.test(html) && /<option value="eur" selected>/.test(html) && html.includes('❌ Vendu : 0 kg (Seuil 500,00 €)') || html.includes('❌ Vendu : 0,00 € (Seuil 500,00 €)'), 'editor shows the value and unit; the card says it is not reached yet');
+    html = await (await get('/admin')).text(); assert(/name="min_value"[^>]*value="500"/.test(html) && /<option value="eur" selected>/.test(html) && html.includes('Vendu : 0,00 € (❌ Seuil 500,00 €)'), 'editor shows the value and unit; the card says it is not reached yet');
     for (const bad of ['abc', '0', '-5', '1e3']) { r = await setMin(bad, 'kg'); assert(/seuil minimum/i.test(decodeURIComponent(loc(r))) && campaignRow().v === 50000, `invalid minimum « ${bad} » refused, previous value kept`); }
     r = await post('/admin/campagnes/enregistrer', { id: '1', name: 'Veggie Deli', delivery_date: [future(10)] }); assert(campaignRow().k === 'money' && campaignRow().v === 50000, 'saving without the minimum fields leaves it as it is');
     // progress counts only PAID orders for the NEXT delivery
@@ -366,10 +366,10 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
     addOrder({ cid: 1, campaign: 'Veggie Deli', total: 30000, status: 'paid', delivery: future(40) }); addOrder({ cid: 1, campaign: 'Veggie Deli', total: 30000, status: 'pending', delivery: future(10) }); addOrder({ cid: 1, campaign: 'Veggie Deli', total: 30000, status: 'refunded', delivery: future(10) });
     t = await shopText(); assert(notice(t), 'orders for another delivery, pending ones and refunded ones do not count');
     const ok1 = addOrder({ cid: 1, campaign: 'Veggie Deli', total: 30000, status: 'paid', delivery: future(10) }); t = await shopText(); assert(notice(t), '300 € paid for this delivery: still under 500 €');
-    html = await (await get('/admin')).text(); assert(html.includes('❌ Vendu : 300,00 € (Seuil 500,00 €)'), 'admin card shows the progress: 300,00 €');
+    html = await (await get('/admin')).text(); assert(html.includes('Vendu : 300,00 € (❌ Seuil 500,00 €)'), 'admin card shows the progress: 300,00 €');
     addOrder({ cid: 1, campaign: 'Veggie Deli', total: 20000, status: 'paid', delivery: future(10) }); t = await shopText();
     assert(!notice(t) && t.includes('Prochaine livraison : <b>' + fr(future(10)) + '</b>'), '500 € paid: the notice disappears');
-    html = await (await get('/admin')).text(); assert(html.includes('✅ Vendu : 500,00 € (Seuil 500,00 €)'), 'admin card: "atteint"');
+    html = await (await get('/admin')).text(); assert(html.includes('Vendu : 500,00 € (✅ Seuil 500,00 €)'), 'admin card: "atteint"');
     // weight minimum counts quantity x grams of paid items
     await setMin('3', 'kg'); t = await shopText(); assert(notice(t) && t.includes('seuil de 3 kg)'), 'weight minimum 3 kg: not reached (paid orders without items weigh nothing)');
     addOrder({ cid: 1, campaign: 'Veggie Deli', total: 1000, status: 'paid', delivery: future(10), item: { pid: pid1.pid, sid: pid1.sid, product: 'Foulet nature', size: '1kg', cents: 1000, qty: 2, grams: 1000 } });
@@ -380,5 +380,26 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
     await setMin('9999', 'kg', 2); t = await shopText();
     assert(t.indexOf('Commandes jusqu’au') < t.indexOf('Livré le <b>' + fr(future(10)) + '</b><br>(sous réserve d’atteindre notre seuil de 9999 kg)') && t.indexOf('Livré le') > 0, 'with a lead time: "Livré le … <br>(sous réserve d’atteindre notre seuil de …)"');
     await setMin('', 'kg', 0); await setDates([future(30)], 0); }
+  // --- duplicating a campaign: products, description, lead time and minimum come along; the delivery dates do not
+  { const d = db(); d.prepare("update campaigns set header_html='<p>Hello</p>', lead_days=4, min_kind='weight', min_value=8000 where id=1").run();
+    r = await post('/admin/campagnes/creer', { name: 'Copie fidèle', copyFrom: '1' }); const cid2 = Number(loc(r).split('=')[1]);
+    const cp = one('select * from campaigns where id=?', cid2);
+    assert(cp.header_html === '<p>Hello</p>' && cp.lead_days === 4 && cp.min_kind === 'weight' && cp.min_value === 8000 && pcount(cid2) === pcount(1) && one('select count(*) n from deliveries where campaign_id=?', cid2).n === 0, 'duplicate: description, lead time, minimum and products copied; no delivery dates');
+    r = await post('/admin/campagnes/creer', { name: 'Vide', copyFrom: '' }); const vid = one('select * from campaigns where id=?', Number(loc(r).split('=')[1]));
+    assert(vid.header_html === '' && vid.lead_days === 0 && vid.min_kind === '', 'no duplicate: an empty campaign keeps the defaults');
+    d.prepare("update campaigns set header_html='', lead_days=0, min_kind='', min_value=0 where id=1").run();
+    html = await (await get('/admin')).text(); assert(html.includes('Dupliquer une campagne') && html.includes('Dupliquer « Veggie Deli »') && !html.includes('Produits de départ'), 'new-campaign form: "Dupliquer une campagne"'); }
+  // --- follow-up step of a paid order: saved from the menu, never for an unpaid one; "Rembourser" sits under the price
+  { const so = addOrder({ cid: 1, campaign: 'Veggie Deli', total: 777, first: 'Suivi' }), pe = addOrder({ cid: 1, campaign: 'Veggie Deli', status: 'pending' });
+    html = await (await get('/admin/commandes?c=1&mode=clients')).text(); const row = html.split('</tr>').find((x) => x.includes('data-id="' + so + '"'));
+    assert(row && /<option value="" selected>Payée<\/option><option value="prepared">Préparée<\/option><option value="contacted">Contactée<\/option><option value="collected">Retirée<\/option><option value="refunded">Remboursée<\/option>/.test(row), 'paid order: menu Payée / Préparée / Contactée / Retirée / Remboursée');
+    assert(/<td class="num">7,77 €<br><form[^>]*class="refundform"/.test(row) && /<td class="st paid"><select/.test(row), 'Rembourser button under the price, menu in the status column');
+    assert(!html.split('</tr>').find((x) => x.includes('<td class="st pending">') && x.includes('<select')), 'a pending order has no menu');
+    r = await post('/admin/commandes/etape', { id: String(so), step: 'prepared' }); assert(r.status === 200 && (await r.json()).ok && one('select step from orders where id=?', so).step === 'prepared', 'choosing Préparée is saved');
+    html = await (await get('/admin/commandes?c=1&mode=clients')).text(); assert(/<option value="prepared" selected>/.test(html.split('</tr>').find((x) => x.includes('data-id="' + so + '"'))), 'the menu shows the saved step after a reload');
+    for (const [st, col] of [['contacted', 'contacted'], ['collected', 'collected'], ['paid', '']]) { r = await post('/admin/commandes/etape', { id: String(so), step: st }); assert(r.status === 200 && one('select step from orders where id=?', so).step === col, 'step ' + st + ' saved'); }
+    r = await post('/admin/commandes/etape', { id: String(so), step: 'nimporte' }); assert(r.status === 400, 'unknown step refused');
+    r = await post('/admin/commandes/etape', { id: String(pe), step: 'prepared' }); assert(r.status === 409 && one('select step from orders where id=?', pe).step === '', 'an unpaid order cannot change step');
+    }
   r = await fetch(B + '/admin/commandes/rembourser', { method: 'POST', redirect: 'manual', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: 'https://evil.example' }, body: `id=${bogus}` }); assert(r.status === 403, 'CSRF guard applies to the refund action');
 })().catch((e) => { console.error('ERROR', e); process.exitCode = 1; });

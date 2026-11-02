@@ -80,6 +80,8 @@ addColumn('campaigns', 'min_kind', "TEXT NOT NULL DEFAULT ''");
 addColumn('campaigns', 'min_value', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('sizes', 'name', "TEXT NOT NULL DEFAULT ''");
 addColumn('order_items', 'size_name', "TEXT NOT NULL DEFAULT ''");
+// Where a paid order stands for the volunteers: '' (just paid) | 'prepared' | 'contacted' | 'collected'. Set by hand in the admin; never touches the payment status.
+addColumn('orders', 'step', "TEXT NOT NULL DEFAULT ''");
 // The customer-facing order number: given only once an order is paid (never to a pending or failed one), so it has no gaps from abandoned
 // checkouts. `id` stays the internal key (it is in the /retour address). Orders paid before this column existed keep their id as number.
 if (!db.prepare('PRAGMA table_info(orders)').all().some((c) => c.name === 'number')) {

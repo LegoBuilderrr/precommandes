@@ -138,10 +138,10 @@
     const list = h('div', { class: 'slist' });
     const rows = p.sizes.map((s, si) => h('div', { class: 'srow' + (s.active ? '' : ' off') },
       h('span', { class: 'grip', title: 'Glisser pour réordonner' }, '⠿'),
-      h('input', { type: 'text', class: 'sname', value: s.name, placeholder: 'Nom (ex. x2)', maxlength: 30, 'aria-label': 'Nom du prix (affiché sur la boutique à la place du poids)', oninput: (e) => { s.name = e.target.value; touch(); } }),
+      h('input', { type: 'text', class: 'sname', value: s.name, placeholder: 'Nom (optionnel)', maxlength: 30, 'aria-label': 'Nom du prix (affiché sur la boutique à la place du poids)', oninput: (e) => { s.name = e.target.value; touch(); } }),
       s.unit === 'text'
         ? h('input', { type: 'text', class: 'slabel', value: s.label, placeholder: 'ex. pièce, lot de 6', 'data-size': `${pi}-${si}`, 'aria-label': 'Libellé', oninput: (e) => { s.label = e.target.value; touch(); } })
-        : h('input', { type: 'text', class: 'slabel', value: s.amount, placeholder: s.unit === 'unit' ? '1' : s.unit === 'kg' ? '1,5' : '500', inputmode: 'decimal', 'data-size': `${pi}-${si}`, 'aria-label': 'Poids', oninput: (e) => { s.amount = e.target.value; touch(); } }),
+        : h('input', { type: 'text', class: 'slabel', value: s.amount, placeholder: s.unit === 'unit' ? '1' : s.unit === 'kg' ? '1,5' : 'quantité', inputmode: 'decimal', 'data-size': `${pi}-${si}`, 'aria-label': 'Poids', oninput: (e) => { s.amount = e.target.value; touch(); } }),
       h('select', { class: 'sunit', 'aria-label': 'Unité', onchange: (e) => { s.unit = e.target.value; touch(); render(); } },
         h('option', { value: 'g', selected: s.unit === 'g' }, 'g'), h('option', { value: 'kg', selected: s.unit === 'kg' }, 'kg'), h('option', { value: 'unit', selected: s.unit === 'unit' }, 'unité'), h('option', { value: 'text', selected: s.unit === 'text' }, 'texte libre')),
       h('input', { type: 'text', class: 'sprice', value: s.price, placeholder: '0,00', inputmode: 'decimal', 'aria-label': 'Prix en euros',
