@@ -13,7 +13,7 @@ const layout = (title, body, { admin = false, script = '', head = '', bar = '' }
   '<link rel="icon" href="/assets/favicon.png"><link rel="stylesheet" href="/assets/style.css"><body class="' + (admin ? 'admin' : 'shop') + '">' +
   '<header><nav class="topnav"><div class="navin"><a class="brand" href="/"><span class="long">Pré-commandes @ l\'éléfàn</span><span class="short">L\'éléfàn</span></a>' +
   '</div></nav></header>' + bar +
-  `<main>${body}</main><footer class="pagefoot">© L'éléfàn · Un problème sur cette page ? <a href="https://barrissement.lelefan.org/adherents/channels/incidents-suggestions-informatique" target="_blank" rel="noopener noreferrer">Contactez l'équipe informatique</a></footer>${script}</body></html>`;
+  `<main>${body}</main><footer class="pagefoot">© L'éléfàn · Un problème sur cette page ? <a href="https://barrissement.lelefan.org/adherents/channels/informatique" target="_blank" rel="noopener noreferrer">Contactez l'équipe informatique</a></footer>${script}</body></html>`;
 
 // Dates are written in French ("mardi 3 novembre 2026"); `iso` is YYYY-MM-DD.
 // the year is only written when it is not the current one (Paris time)
