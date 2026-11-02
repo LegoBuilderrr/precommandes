@@ -46,7 +46,7 @@ const loginAs = async (who, password) => { const r = await post('/admin/connexio
   r = await post('/admin/connexion', { login: 'JDUPONT', password: 'mdp-admin' }); assert(r.status === 303, 'user name login works, any case');
   r = await post('/admin/connexion', { login: ' jdupont ', password: 'mdp-admin' }); assert(r.status === 303, 'surrounding spaces ignored');
   r = await post('/admin/connexion', { login: 'sophie@example.org', password: 'mdp-admin' }); assert(r.status === 401, 'the e-mail of one account with the password of another is refused');
-  r = await get('/admin/connexion'); html = await r.text(); assert(html.includes('Nom d’utilisateur ou courriel') && html.includes('https://membres.lelefan.org/resetting/request'), 'login page worded like the members site, with the forgotten-password link');
+  r = await get('/admin/connexion'); html = await r.text(); assert(html.includes('Nom d’utilisateur ou courriel') && !html.includes('oublié') && !html.includes('Les mêmes identifiants'), 'login page worded like the members site, without the extra sentences');
   // login by e-mail, whatever the case
   const em = await loginAs('JEAN.d@example.org', 'mdp-admin'); assert(em.r.status === 303 && /^admin_session=/.test(em.cookie), 'login also works with the e-mail address, any case');
   // a Précommandes member: orders only

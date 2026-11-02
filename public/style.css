@@ -288,3 +288,10 @@ button.imgdrop:hover{border-color:var(--brand);color:var(--ink);background:var(-
 /* signed-in account: "jdupont · Déconnexion" */
 .who{margin:0 0 0 auto;font-size:.85rem;color:var(--mut)}.who button{padding:0;margin:0;font-size:.85rem;color:var(--link);background:none;border:0;box-shadow:none;text-decoration:underline;height:auto;min-width:0;text-transform:none;letter-spacing:0}
 body.admin main>.who{display:block;text-align:right;margin:0 0 .6em}
+/* admin login: like the members site (narrow centred form, icon before each field, centred button) */
+.loginform{max-width:430px;margin:3rem auto 0}
+.loginform .field{display:flex;align-items:center;gap:1rem;margin:0 0 2.3rem}
+.loginform .field svg{flex:none;width:28px;height:28px;fill:var(--ink)}
+.loginform .field input{flex:1;min-width:0;font-size:1rem;border-bottom-width:2px}
+.loginform .center{text-align:center}
+.loginform .alert{margin:0 0 1.6rem}

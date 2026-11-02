@@ -124,14 +124,13 @@ ${canEdit ? `<section class="card newcamp"><h2>Nouvelle campagne</h2><form metho
 <div class="actions"><button class="primary">Créer la campagne</button></div></form></section>` : ''}`, { admin: true, script: '<script src="/assets/admin-campaigns.js"></script>' });
 }
 
-// Admin login page, worded like the members site: user name or e-mail, and the password.
-const loginPage = (error = '') => layout('Connexion', `<h1 class="pagetitle">Administration des précommandes</h1>
-<section class="card newcamp"><form method="post" action="/admin/connexion" class="cform">
+// Admin login page, styled like the members site's: no title, icons in front of the two fields, centred button.
+const ICON_USER = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.9c1.16 0 2.1.94 2.1 2.1s-.94 2.1-2.1 2.1S9.9 9.16 9.9 8s.94-2.1 2.1-2.1m0 9c2.97 0 6.1 1.46 6.1 2.1v1.1H5.9V17c0-.64 3.13-2.1 6.1-2.1M12 4C9.79 4 8 5.79 8 8s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 9c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4z"/></svg>';
+const ICON_LOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM8.9 6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2H8.9V6zM18 20H6V10h12v10z"/></svg>';
+const loginPage = (error = '') => layout('Connexion', `<form method="post" action="/admin/connexion" class="loginform">
 ${error ? `<p class="alert">${esc(error)}</p>` : ''}
-<label>Nom d’utilisateur ou courriel<input type="text" name="login" required autofocus autocomplete="username" autocapitalize="none" spellcheck="false"></label>
-<label>Mot de passe<input type="password" name="password" required autocomplete="current-password"></label>
-<p class="hint">Les mêmes identifiants que sur le site des membres.</p>
-<div class="actions"><button class="primary">Entrer</button></div>
-<p class="hint"><a href="https://membres.lelefan.org/resetting/request" target="_blank" rel="noopener">Mot de passe ou identifiant oublié ?</a></p></form></section>`, { admin: true });
+<div class="field">${ICON_USER}<input type="text" name="login" required autofocus autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Nom d’utilisateur ou courriel" aria-label="Nom d’utilisateur ou courriel"></div>
+<div class="field">${ICON_LOCK}<input type="password" name="password" required autocomplete="current-password" placeholder="Mot de passe" aria-label="Mot de passe"></div>
+<div class="center"><button class="primary">Connexion</button></div></form>`, { admin: true });
 
 module.exports = { loginPage, campaignsPage, dashboard, ordersPage, productsPage };
