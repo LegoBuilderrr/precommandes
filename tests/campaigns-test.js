@@ -392,13 +392,17 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
   // --- follow-up step of a paid order: saved from the menu, never for an unpaid one; "Rembourser" sits under the price
   { const so = addOrder({ cid: 1, campaign: 'Veggie Deli', total: 777, first: 'Suivi' }), pe = addOrder({ cid: 1, campaign: 'Veggie Deli', status: 'pending' });
     html = await (await get('/admin/commandes?c=1&mode=clients')).text(); const row = html.split('</tr>').find((x) => x.includes('data-id="' + so + '"'));
-    assert(row && /<option value="" selected>Payée<\/option><option value="prepared">Préparée<\/option><option value="contacted">Contactée<\/option><option value="collected">Retirée<\/option><option value="refunded">Remboursée<\/option>/.test(row), 'paid order: menu Payée / Préparée / Contactée / Retirée / Remboursée');
+    assert(row && /<option value="" selected>Payée<\/option><option value="prepared">Préparée<\/option><option value="contacted">Contactée<\/option><option value="collected">Retirée<\/option><option value="refunded" disabled>Remboursée<\/option>/.test(row), 'paid order: menu Payée / Préparée / Contactée / Retirée, with Remboursée listed but not selectable');
     assert(/<td class="num">7,77 €<br><form[^>]*class="refundform"/.test(row) && /<td class="st paid"><select/.test(row), 'Rembourser button under the price, menu in the status column');
     assert(!html.split('</tr>').find((x) => x.includes('<td class="st pending">') && x.includes('<select')), 'a pending order has no menu');
     r = await post('/admin/commandes/etape', { id: String(so), step: 'prepared' }); assert(r.status === 200 && (await r.json()).ok && one('select step from orders where id=?', so).step === 'prepared', 'choosing Préparée is saved');
     html = await (await get('/admin/commandes?c=1&mode=clients')).text(); assert(/<option value="prepared" selected>/.test(html.split('</tr>').find((x) => x.includes('data-id="' + so + '"'))), 'the menu shows the saved step after a reload');
     for (const [st, col] of [['contacted', 'contacted'], ['collected', 'collected'], ['paid', '']]) { r = await post('/admin/commandes/etape', { id: String(so), step: st }); assert(r.status === 200 && one('select step from orders where id=?', so).step === col, 'step ' + st + ' saved'); }
     r = await post('/admin/commandes/etape', { id: String(so), step: 'nimporte' }); assert(r.status === 400, 'unknown step refused');
+    r = await post('/admin/commandes/etape', { id: String(so), step: 'refunded' }); assert(r.status === 400 && one('select status from orders where id=?', so).status === 'paid', 'Remboursée cannot be set through the menu endpoint');
+    const rf = addOrder({ cid: 1, campaign: 'Veggie Deli', status: 'refunded', first: 'Rendu' });
+    r = await post('/admin/commandes/etape', { id: String(rf), step: 'prepared' }); assert(r.status === 409 && one('select step from orders where id=?', rf).step === '', 'a refunded order is locked');
+    html = await (await get('/admin/commandes?c=1&mode=clients')).text(); assert(/<td class="st refunded"><select class="stepsel" disabled[^>]*><option selected>Remboursée<\/option><\/select>/.test(html.split('</tr>').find((x) => x.includes('Rendu'))), 'refunded order: menu locked on Remboursée');
     r = await post('/admin/commandes/etape', { id: String(pe), step: 'prepared' }); assert(r.status === 409 && one('select step from orders where id=?', pe).step === '', 'an unpaid order cannot change step');
     }
   r = await fetch(B + '/admin/commandes/rembourser', { method: 'POST', redirect: 'manual', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: 'https://evil.example' }, body: `id=${bogus}` }); assert(r.status === 403, 'CSRF guard applies to the refund action');

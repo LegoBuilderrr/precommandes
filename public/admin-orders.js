@@ -1,15 +1,11 @@
 // Orders page (Clients): the follow-up menu of a paid order is saved as soon as it changes.
-// "Remboursée" is the real refund: after a confirmation it sends the order's "Rembourser" form.
+// "Remboursée" cannot be picked here: only the "Rembourser" button sets it.
 (() => {
   'use strict';
   document.addEventListener('change', async (e) => {
     const sel = e.target.closest('select.stepsel'); if (!sel) return;
-    const row = sel.closest('tr'), msg = row.querySelector('.stepmsg'), refundForm = row.querySelector('form.refundform');
+    const msg = sel.closest('tr').querySelector('.stepmsg');
     const say = (text, bad) => { msg.textContent = text; msg.className = 'stepmsg' + (bad ? ' bad' : ''); };
-    if (sel.value === 'refunded') {
-      if (refundForm && confirm(refundForm.dataset.confirm)) refundForm.submit(); else sel.value = sel.dataset.prev;
-      return;
-    }
     sel.disabled = true; say('…');
     try {
       const r = await fetch('/admin/commandes/etape', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ id: sel.dataset.id, step: sel.value || 'paid' }) });

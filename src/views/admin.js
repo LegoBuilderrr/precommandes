@@ -62,10 +62,11 @@ function ordersPage(orders, itemsByOrder, msg, ctx, k) {
     const refund = o.status === 'paid'
       ? `<form method="post" action="/admin/commandes/rembourser" class="refundform" data-confirm="Rembourser intégralement la commande n°${o.number} (${euros(o.total_cents)}) à ${esc(o.first_name)} ${esc(o.last_name)} ? Cette action est définitive." onsubmit="return confirm(this.dataset.confirm)"><input type="hidden" name="id" value="${o.id}"><button class="refund">↩ Rembourser</button></form>`
       : '';
-    // a paid order is followed by hand (menu saved on change); the other statuses are plain text
+    // a paid order is followed by hand (menu saved on change); "Remboursée" is listed but cannot be picked: only the refund button sets it, and then the menu stays locked on it
     const status = o.status === 'paid'
-      ? `<select class="stepsel" data-id="${o.id}" data-prev="${esc(o.step || '')}" aria-label="Étape de la commande n°${o.number}">${STEP_OPTIONS.map(([v, t]) => `<option value="${v}"${v === (o.step || '') ? ' selected' : ''}>${t}</option>`).join('')}</select><span class="stepmsg" role="status"></span>`
-      : `${esc(STATUS_FR[o.status] || o.status)}${o.status === 'refunded' && o.refunded_at ? `<br><small class="hint">le ${esc(o.refunded_at)}</small>` : ''}`;
+      ? `<select class="stepsel" data-id="${o.id}" data-prev="${esc(o.step || '')}" aria-label="Étape de la commande n°${o.number}">${STEP_OPTIONS.map(([v, t]) => `<option value="${v}"${v === (o.step || '') ? ' selected' : ''}${v === 'refunded' ? ' disabled' : ''}>${t}</option>`).join('')}</select><span class="stepmsg" role="status"></span>`
+      : o.status === 'refunded' ? `<select class="stepsel" disabled aria-label="Commande n°${o.number} remboursée"><option selected>Remboursée</option></select>${o.refunded_at ? `<br><small class="hint">le ${esc(o.refunded_at)}</small>` : ''}`
+      : `${esc(STATUS_FR[o.status] || o.status)}`;
     return `<tr${UNPAID.includes(o.status) ? ' class="unpaid"' : ''}><td>${o.number ?? '—'}${o.demo ? '<br><small class="pill demo">démo</small>' : ''}<td>${esc(o.created_at)}<td>${esc(o.first_name)} ${esc(o.last_name)}<br>${esc(o.email)}` +
       `<td>${(itemsByOrder.get(o.id) || []).map(lineText).join('<br>')}${orderWeight(itemsByOrder.get(o.id))}${o.comment ? `<br><i>${esc(o.comment)}</i>` : ''}<td class="num">${euros(o.total_cents)}${refund ? `<br>${refund}` : ''}` +
       `<td class="st ${esc(o.status)}">${status}</tr>`;
