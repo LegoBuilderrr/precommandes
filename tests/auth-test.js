@@ -8,7 +8,7 @@ const post = (p, body, h = {}) => fetch(B + p, { method: 'POST', redirect: 'manu
 // like the PHP side: bcrypt with the $2y$ prefix
 const phpHash = (pw) => bcrypt.hashSync(pw, 4).replace(/^\$2[ab]\$/, '$2y$');
 const writeUsers = (users) => { fs.writeFileSync(USERS, JSON.stringify({ generated_at: new Date().toISOString(), users })); fs.utimesSync(USERS, new Date(), new Date(Date.now() + Math.random() * 1e5)); };
-const ADMIN = { login: 'cdeligeon', email: 'Claire.D@example.org', hash: phpHash('mdp-admin'), role: 'admin' };
+const ADMIN = { login: 'jdupont', email: 'Jean.D@example.org', hash: phpHash('mdp-admin'), role: 'admin' };
 const PRE = { login: 'sophie', email: 'sophie@example.org', hash: phpHash('mdp-precom'), role: 'precommandes' };
 const loginAs = async (who, password) => { const r = await post('/admin/connexion', { login: who, password }); return { r, cookie: (r.headers.get('set-cookie') || '').split(';')[0] }; };
 (async () => {
@@ -22,18 +22,18 @@ const loginAs = async (who, password) => { const r = await post('/admin/connexio
   r = await fetch(B + '/admin/api/catalogue?c=1', { method: 'POST', body: '[]' }); assert(r.status === 401, 'catalogue API refused without session');
   r = await fetch('http://127.0.0.1:8449/precommandes/admin', { headers: { Authorization: 'Basic ' + Buffer.from('admin:admin').toString('base64') }, redirect: 'manual' }); assert(r.status === 303, 'Basic auth no longer opens the admin');
   // wrong credentials: same answer for a wrong password and for an unknown account, with a delay
-  let t0 = Date.now(); r = await post('/admin/connexion', { login: 'cdeligeon', password: 'nope' }); html = await r.text();
+  let t0 = Date.now(); r = await post('/admin/connexion', { login: 'jdupont', password: 'nope' }); html = await r.text();
   assert(r.status === 401 && /Identifiant ou mot de passe incorrect/.test(html) && !r.headers.get('set-cookie') && Date.now() - t0 >= 900, 'wrong password: message, no cookie, ~1 s delay');
   r = await post('/admin/connexion', { login: 'inconnu', password: 'mdp-admin' }); assert(r.status === 401 && !r.headers.get('set-cookie'), 'unknown account: refused');
   r = await post('/admin/connexion', { login: 'ghost', password: 'x' }); assert(r.status === 401, 'an entry without a bcrypt hash is ignored');
   r = await post('/admin/connexion', { login: 'odd', password: 'x' }); assert(r.status === 401, 'an entry with an unknown role is ignored');
-  r = await post('/admin/connexion', { login: 'cdeligeon', password: 'mdp-admin' }, { Origin: 'https://evil.example' }); assert(r.status === 403, 'cross-site login POST refused (CSRF guard)');
+  r = await post('/admin/connexion', { login: 'jdupont', password: 'mdp-admin' }, { Origin: 'https://evil.example' }); assert(r.status === 403, 'cross-site login POST refused (CSRF guard)');
   // an administrator
-  let a = await loginAs('cdeligeon', 'mdp-admin'); const ck = a.r.headers.get('set-cookie') || '';
+  let a = await loginAs('jdupont', 'mdp-admin'); const ck = a.r.headers.get('set-cookie') || '';
   assert(a.r.status === 303 && a.r.headers.get('location') === '/precommandes/admin' && /^admin_session=\d+\.[\w-]+\.[\w-]+;/.test(ck) && /HttpOnly/.test(ck) && /SameSite=Lax/.test(ck) && /Path=\/precommandes/.test(ck), 'administrator logs in with the member password ($2y$ hash): signed cookie: ' + ck.slice(0, 40));
   assert(!ck.includes('mdp-admin') && !ck.includes('$2y$'), 'the cookie holds neither password nor hash');
   r = await get('/admin', { Cookie: a.cookie }); html = await r.text();
-  assert(r.status === 200 && html.includes('Nouvelle campagne') && html.includes('Modifier la campagne') && html.includes('/admin/produits?c=') && html.includes('cdeligeon') && html.includes('Déconnexion'), 'administrator sees everything, and who is signed in');
+  assert(r.status === 200 && html.includes('Nouvelle campagne') && html.includes('Modifier la campagne') && html.includes('/admin/produits?c=') && html.includes('jdupont') && html.includes('Déconnexion'), 'administrator sees everything, and who is signed in');
   r = await get('/admin/produits?c=1', { Cookie: a.cookie }); assert(r.status === 200, 'administrator opens the product editor');
   r = await get('/admin/commandes.csv', { Cookie: a.cookie }); assert(r.status === 200, 'CSV download works with the cookie');
   r = await get('/admin/connexion', { Cookie: a.cookie }); assert(r.status === 303 && r.headers.get('location') === '/precommandes/admin', 'login page sends a signed-in user to the admin');
@@ -42,13 +42,13 @@ const loginAs = async (who, password) => { const r = await post('/admin/connexio
   d.prepare("insert into order_items (order_id,product,variant,size,unit_cents,qty,grams) values (?,'Faux-cisses','aux herbes','160gr',500,2,160)").run(paid);
   r = await get(`/admin/commandes?c=${cid}&mode=clients`, { Cookie: a.cookie }); html = await r.text(); assert(html.includes('class="refund"') && html.includes('class="stepsel"'), 'administrator sees the refund button and the step menu');
   // like the members site: an entry containing @ is an e-mail, anything else a user name
-  r = await post('/admin/connexion', { login: 'claire.d@example.org', password: 'mdp-admin' }); assert(r.status === 303, 'e-mail login works');
-  r = await post('/admin/connexion', { login: 'CDELIGEON', password: 'mdp-admin' }); assert(r.status === 303, 'user name login works, any case');
-  r = await post('/admin/connexion', { login: ' cdeligeon ', password: 'mdp-admin' }); assert(r.status === 303, 'surrounding spaces ignored');
+  r = await post('/admin/connexion', { login: 'jean.d@example.org', password: 'mdp-admin' }); assert(r.status === 303, 'e-mail login works');
+  r = await post('/admin/connexion', { login: 'JDUPONT', password: 'mdp-admin' }); assert(r.status === 303, 'user name login works, any case');
+  r = await post('/admin/connexion', { login: ' jdupont ', password: 'mdp-admin' }); assert(r.status === 303, 'surrounding spaces ignored');
   r = await post('/admin/connexion', { login: 'sophie@example.org', password: 'mdp-admin' }); assert(r.status === 401, 'the e-mail of one account with the password of another is refused');
   r = await get('/admin/connexion'); html = await r.text(); assert(html.includes('Nom d’utilisateur ou courriel') && html.includes('https://membres.lelefan.org/resetting/request'), 'login page worded like the members site, with the forgotten-password link');
   // login by e-mail, whatever the case
-  const em = await loginAs('CLAIRE.d@example.org', 'mdp-admin'); assert(em.r.status === 303 && /^admin_session=/.test(em.cookie), 'login also works with the e-mail address, any case');
+  const em = await loginAs('JEAN.d@example.org', 'mdp-admin'); assert(em.r.status === 303 && /^admin_session=/.test(em.cookie), 'login also works with the e-mail address, any case');
   // a Précommandes member: orders only
   const p = await loginAs('sophie', 'mdp-precom'); assert(p.r.status === 303 && /^admin_session=/.test(p.cookie), 'Précommandes member logs in');
   r = await get('/admin', { Cookie: p.cookie }); html = await r.text();
@@ -83,6 +83,6 @@ const loginAs = async (who, password) => { const r = await post('/admin/connexio
   r = await get('/admin/produits?c=1', { Cookie: sh.cookie }); assert(r.status === 200, 'the shared password gives the administrator role');
   r = await get('/boutique/veggie-deli'); assert(r.status === 200 || r.status === 404, 'public shop needs no login (' + r.status + ')');
   // guess limiter: 10 wrong per minute, then 429 even for the right password
-  for (let i = 0; i < 10; i++) await post('/admin/connexion', { login: 'cdeligeon', password: 'x' + i });
-  r = await post('/admin/connexion', { login: 'cdeligeon', password: 'mdp-admin' }); assert(r.status === 429, 'after 10 wrong guesses a minute, logins are blocked: ' + r.status);
+  for (let i = 0; i < 10; i++) await post('/admin/connexion', { login: 'jdupont', password: 'x' + i });
+  r = await post('/admin/connexion', { login: 'jdupont', password: 'mdp-admin' }); assert(r.status === 429, 'after 10 wrong guesses a minute, logins are blocked: ' + r.status);
 })().catch((e) => { console.error('ERROR', e); process.exitCode = 1; });

@@ -13,7 +13,7 @@ const lineText = (i) => `${i.qty} × ${esc(label(i.product, i.variant, sizeG(i.s
 const STEP_OPTIONS = [['', 'Payée'], ['prepared', 'Préparée'], ['contacted', 'Contactée'], ['collected', 'Retirée'], ['refunded', 'Remboursée']];
 const STATUS_FR = { pending: 'En attente', paid: 'Payée', failed: 'Échec', refunding: 'Remboursement en cours', refunded: 'Remboursée' };
 
-// "cdeligeon · Déconnexion" (nothing in the open local admin)
+// "jdupont · Déconnexion" (nothing in the open local admin)
 const whoBox = (user) => (user && user.login ? `<form method="post" action="/admin/deconnexion" class="who">${esc(user.login)} · <button class="flat">Déconnexion</button></form>` : '');
 
 // Campaign picker, shown prominently at the top of every campaign-scoped admin page (there is no "all campaigns" view).
