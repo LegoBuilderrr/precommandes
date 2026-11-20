@@ -62,7 +62,7 @@ function ordersPage(orders, itemsByOrder, msg, ctx, k) {
   const cid = ctx.campaign.id;
   const nUnpaid = orders.filter((o) => UNPAID.includes(o.status)).length;
   const rows = orders.map((o) => {
-    const refund = o.status === 'paid' && ctx.canEdit
+    const refund = o.status === 'paid' && ctx.canRefund
       ? `<form method="post" action="/admin/commandes/rembourser" class="refundform" data-confirm="Rembourser intégralement la commande n°${o.number} (${euros(o.total_cents)}) à ${esc(o.first_name)} ${esc(o.last_name)} ? Cette action est définitive." onsubmit="return confirm(this.dataset.confirm)"><input type="hidden" name="id" value="${o.id}"><button class="refund">↩ Rembourser</button></form>`
       : '';
     // a paid order is followed by hand (menu saved on change); "Remboursée" is listed but cannot be picked: only the refund button sets it, and then the menu stays locked on it
@@ -93,17 +93,15 @@ const thresholdHint = (st) => {
   return `<div class="hint">Vendu : ${esc(cur)} (${t.reached ? '✅' : '❌'} Seuil ${esc(thresholdText(t))})</div>`;
 };
 
-// user = { login, role }: a 'precommandes' member only follows the orders (no product editor, no campaign editing, no new campaign)
 function campaignsPage(list, msg = '', baseUrl = '', user = null) {
-  const canEdit = !user || user.role === 'admin';
   const cards = list.map((c) => `<section class="card camp">
 <div class="camphead"><div><h2>${esc(c.name)} <span class="pill ${c.state.open ? 'open' : 'closed'}">${c.state.open ? 'Ouverte' : 'Fermée'}</span></h2>
 <div class="hint">${c.state.next ? `Clôture commandes : ${esc(frDay(c.state.deadline))}<br>Livraison : ${esc(frDay(c.state.next))}` : 'Aucune livraison à venir : la boutique reste visible mais ne prend pas de commande.'}</div>
 ${thresholdHint(c.state)}
 <div class="hint shoplink">Lien vers la boutique : <a href="/boutique/${esc(c.slug)}" target="_blank" rel="noopener">${esc(baseUrl)}/boutique/${esc(c.slug)} ↗</a>
 <button type="button" class="ibtn copybtn" data-copy="${esc(baseUrl)}/boutique/${esc(c.slug)}" title="Copier le lien" aria-label="Copier le lien vers la boutique">${COPY_ICON}</button><span class="copied-msg" role="status"></span></div></div>
-<div class="campbtns">${canEdit ? `<a class="btn" href="/admin/produits?c=${c.id}">Produits</a>` : ''}<a class="btn" href="/admin/commandes?c=${c.id}">Commandes</a></div></div>
-${canEdit ? `<details><summary>Modifier la campagne</summary>
+<div class="campbtns"><a class="btn" href="/admin/produits?c=${c.id}">Produits</a><a class="btn" href="/admin/commandes?c=${c.id}">Commandes</a></div></div>
+<details><summary>Modifier la campagne</summary>
 <form method="post" action="/admin/campagnes/enregistrer" class="cform"><input type="hidden" name="id" value="${c.id}">
 <label>Nom<input type="text" name="name" value="${esc(c.name)}" required maxlength="80"></label>
 <fieldset class="dates"><legend>Dates de livraison</legend>
@@ -115,13 +113,13 @@ ${canEdit ? `<details><summary>Modifier la campagne</summary>
 <label>En-tête HTML (optionnel)<textarea name="header_html" rows="6" class="code" maxlength="20000" placeholder="&lt;div&gt;Bienvenue ! …&lt;/div&gt;">${esc(c.header_html)}</textarea></label>
 <div class="actions"><button>Enregistrer</button></div></form>
 <form method="post" action="/admin/campagnes/supprimer" onsubmit="return confirm('Supprimer cette campagne et ses produits ?')"><input type="hidden" name="id" value="${c.id}">
-<button class="flat" ${c.orders ? 'disabled title="Une campagne qui a des commandes ne peut pas être supprimée."' : ''}>🗑 Supprimer la campagne</button></form></details>` : ''}</section>`).join('');
+<button class="flat" ${c.orders ? 'disabled title="Une campagne qui a des commandes ne peut pas être supprimée."' : ''}>🗑 Supprimer la campagne</button></form></details></section>`).join('');
   return layout('Administration des précommandes', `${whoBox(user)}<h1 class="pagetitle">Administration des précommandes</h1>${msg ? `<p class="note">${esc(msg)}</p>` : ''}
 <h2>Campagnes (${list.length})</h2>${cards || '<p>Aucune campagne.</p>'}
-${canEdit ? `<section class="card newcamp"><h2>Nouvelle campagne</h2><form method="post" action="/admin/campagnes/creer" class="cform">
+<section class="card newcamp"><h2>Nouvelle campagne</h2><form method="post" action="/admin/campagnes/creer" class="cform">
 <label>Nom *<input type="text" name="name" required maxlength="80" placeholder="ex. Noël 2026"></label>
 <label>Dupliquer une campagne<select name="copyFrom"><option value="">Aucune : campagne vide</option>${list.map((c) => `<option value="${c.id}">Dupliquer « ${esc(c.name)} »</option>`).join('')}</select></label>
-<div class="actions"><button class="primary">Créer la campagne</button></div></form></section>` : ''}`, { admin: true, script: '<script src="/assets/admin-campaigns.js"></script>' });
+<div class="actions"><button class="primary">Créer la campagne</button></div></form></section>`, { admin: true, script: '<script src="/assets/admin-campaigns.js"></script>' });
 }
 
 // Admin login page, styled like the members site's: no title, icons in front of the two fields, centred button.

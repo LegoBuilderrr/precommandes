@@ -8,7 +8,7 @@
 // Metabase address and API key: METABASE_URL + METABASE_API_KEY, or a two-line file (address, key; default ../metabase/api.txt).
 // Who gets in:
 //   role "admin"        members trained "Informatique", plus the non-member accounts listed in EXTRA_ADMINS
-//   role "precommandes" members trained "Précommandes" (orders only; an account with both trainings is an admin)
+//   role "precommandes" members trained "Précommandes" (everything except refunds; an account with both trainings is an admin)
 // Only enabled accounts with a bcrypt password are kept, and members who left (withdrawn) are skipped.
 // The output holds password hashes: never commit it (it is in .gitignore) and keep it private (mode 600).
 const fs = require('node:fs');

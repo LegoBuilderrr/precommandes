@@ -23,8 +23,8 @@ La connexion à `/admin` utilise les comptes du site des membres (identifiant ou
 interroge Metabase et écrit `users.json` (identifiant, e-mail, hash bcrypt, rôle) :
 
 - rôle **admin** : les membres de la formation « Informatique », plus les comptes non membres `mahaut` et `emma` ;
-- rôle **precommandes** : les membres de la formation « Précommandes ». Ils suivent les commandes (étapes, exports) mais ne peuvent ni
-  modifier les campagnes ou les produits, ni rembourser.
+- rôle **precommandes** : les membres de la formation « Précommandes ». Mêmes droits que les admins (campagnes, produits, commandes,
+  exports), sauf rembourser une commande.
 
 ```
 node scripts/export-users.js                  # écrit ./users.json (adresse et clé Metabase : ../metabase/api.txt ou METABASE_URL + METABASE_API_KEY)

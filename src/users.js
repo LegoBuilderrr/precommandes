@@ -1,6 +1,6 @@
 // The accounts allowed into /admin: a small file made by scripts/export-users.js from the members database
 // ({ generated_at, users: [{ login, email, hash, role }] }, bcrypt hashes of the members' own passwords).
-// role = 'admin' (everything) or 'precommandes' (orders only). The file is read again whenever it changes, so a new export
+// role = 'admin' (everything) or 'precommandes' (everything except refunding an order). The file is read again whenever it changes, so a new export
 // (also one that removes somebody) applies without restarting the server.
 const fs = require('node:fs');
 const path = require('node:path');

@@ -49,16 +49,17 @@ const loginAs = async (who, password) => { const r = await post('/admin/connexio
   r = await get('/admin/connexion'); html = await r.text(); assert(html.includes('Nom d’utilisateur ou courriel') && !html.includes('oublié') && !html.includes('Les mêmes identifiants'), 'login page worded like the members site, without the extra sentences');
   // login by e-mail, whatever the case
   const em = await loginAs('JEAN.d@example.org', 'mdp-admin'); assert(em.r.status === 303 && /^admin_session=/.test(em.cookie), 'login also works with the e-mail address, any case');
-  // a Précommandes member: orders only
+  // a Précommandes member: same rights as an administrator, except refunding
   const p = await loginAs('sophie', 'mdp-precom'); assert(p.r.status === 303 && /^admin_session=/.test(p.cookie), 'Précommandes member logs in');
   r = await get('/admin', { Cookie: p.cookie }); html = await r.text();
-  assert(r.status === 200 && html.includes('Veggie Deli') && html.includes('/admin/commandes?c=') && !html.includes('Nouvelle campagne') && !html.includes('Modifier la campagne') && !html.includes('/admin/produits?c=') && !html.includes('Supprimer la campagne') && !html.includes('name="header_html"'), 'Précommandes member: campaigns listed, no editing, no new campaign, no product editor link');
-  r = await get('/admin/produits?c=1', { Cookie: p.cookie }); assert(r.status === 403, 'Précommandes member: product editor refused');
-  r = await post('/admin/campagnes/creer', { name: 'Intrus' }, { Cookie: p.cookie }); assert(r.status === 403 && !d.prepare("select 1 from campaigns where name='Intrus'").get(), 'Précommandes member: cannot create a campaign');
-  r = await post('/admin/campagnes/enregistrer', { id: String(cid), name: 'Piraté' }, { Cookie: p.cookie }); assert(r.status === 403 && d.prepare('select name from campaigns where id=?').get(cid).name !== 'Piraté', 'Précommandes member: cannot edit a campaign');
-  r = await post('/admin/campagnes/supprimer', { id: String(cid) }, { Cookie: p.cookie }); assert(r.status === 403, 'Précommandes member: cannot delete a campaign');
-  r = await fetch(B + `/admin/api/catalogue?c=${cid}`, { method: 'POST', headers: { Cookie: p.cookie }, body: '[]' }); assert(r.status === 403, 'Précommandes member: cannot save products');
-  r = await fetch(B + '/admin/api/televerser', { method: 'POST', headers: { Cookie: p.cookie, 'Content-Type': 'image/png' }, body: 'x' }); assert(r.status === 403, 'Précommandes member: cannot upload pictures');
+  assert(r.status === 200 && html.includes('Veggie Deli') && html.includes('/admin/commandes?c=') && html.includes('Nouvelle campagne') && html.includes('Modifier la campagne') && html.includes('/admin/produits?c=') && html.includes('name="header_html"'), 'Précommandes member: campaigns page with editing, new campaign and product editor link');
+  r = await get('/admin/produits?c=1', { Cookie: p.cookie }); assert(r.status === 200, 'Précommandes member: product editor allowed');
+  r = await post('/admin/campagnes/creer', { name: 'Campagne équipe' }, { Cookie: p.cookie }); assert(r.status === 303 && d.prepare("select 1 from campaigns where name='Campagne équipe'").get(), 'Précommandes member: can create a campaign');
+  const mine = d.prepare("select id from campaigns where name='Campagne équipe'").get().id;
+  r = await post('/admin/campagnes/enregistrer', { id: String(mine), name: 'Campagne équipe 2' }, { Cookie: p.cookie }); assert(r.status === 303 && d.prepare('select name from campaigns where id=?').get(mine).name === 'Campagne équipe 2', 'Précommandes member: can edit a campaign');
+  r = await post('/admin/campagnes/supprimer', { id: String(mine) }, { Cookie: p.cookie }); assert(r.status === 303 && !d.prepare('select 1 from campaigns where id=?').get(mine), 'Précommandes member: can delete an empty campaign');
+  r = await fetch(B + `/admin/api/catalogue?c=${cid}`, { method: 'POST', headers: { Cookie: p.cookie }, body: '[]' }); assert(r.status !== 403, 'Précommandes member: product saving is not refused (' + r.status + ')');
+  r = await fetch(B + '/admin/api/televerser', { method: 'POST', headers: { Cookie: p.cookie, 'Content-Type': 'image/png' }, body: 'x' }); assert(r.status !== 403, 'Précommandes member: picture upload is not refused (' + r.status + ')');
   r = await post('/admin/commandes/rembourser', { id: String(paid) }, { Cookie: p.cookie }); assert(r.status === 403 && d.prepare('select status from orders where id=?').get(paid).status === 'paid', 'Précommandes member: cannot refund (the order stays paid)');
   r = await get(`/admin/commandes?c=${cid}&mode=clients`, { Cookie: p.cookie }); html = await r.text();
   assert(r.status === 200 && html.includes('class="stepsel"') && !html.includes('class="refund"') && !html.includes('Rembourser'), 'Précommandes member: orders page with the step menu but without the refund button');
