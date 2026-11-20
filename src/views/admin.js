@@ -70,7 +70,9 @@ function ordersPage(orders, itemsByOrder, msg, ctx, k) {
       ? `<select class="stepsel" data-id="${o.id}" data-prev="${esc(o.step || '')}" aria-label="Étape de la commande n°${o.number}">${STEP_OPTIONS.map(([v, t]) => `<option value="${v}"${v === (o.step || '') ? ' selected' : ''}${v === 'refunded' ? ' disabled' : ''}>${t}</option>`).join('')}</select><span class="stepmsg" role="status"></span>`
       : o.status === 'refunded' ? `<select class="stepsel" disabled aria-label="Commande n°${o.number} remboursée"><option selected>Remboursée</option></select>${o.refunded_at ? `<br><small class="hint">le ${esc(o.refunded_at)}</small>` : ''}`
       : `${esc(STATUS_FR[o.status] || o.status)}`;
-    return `<tr${UNPAID.includes(o.status) ? ' class="unpaid"' : ''}><td>${o.number ?? '—'}${o.demo ? '<br><small class="pill demo">démo</small>' : ''}<td>${esc(o.created_at)}<td>${esc(o.first_name)} ${esc(o.last_name)}<br>${esc(o.email)}` +
+    // only a paid order can be ticked (bulk step change); the data-* attributes feed the column sorting
+    const pick = o.status === 'paid' ? `<input type="checkbox" class="rowsel" data-id="${o.id}" aria-label="Sélectionner la commande n°${o.number}">` : '';
+    return `<tr${UNPAID.includes(o.status) ? ' class="unpaid"' : ''} data-id="${o.id}" data-num="${o.number ?? ''}" data-date="${esc(o.created_at)}" data-name="${esc(`${o.last_name} ${o.first_name}`.toLowerCase())}"><td class="sel">${pick}<td>${o.number ?? '—'}${o.demo ? '<br><small class="pill demo">démo</small>' : ''}<td>${esc(o.created_at)}<td>${esc(o.first_name)} ${esc(o.last_name)}<br>${esc(o.email)}` +
       `<td>${(itemsByOrder.get(o.id) || []).map(lineText).join('<br>')}${orderWeight(itemsByOrder.get(o.id))}${o.comment ? `<br><i>${esc(o.comment)}</i>` : ''}<td class="num">${euros(o.total_cents)}${refund ? `<br>${refund}` : ''}` +
       `<td class="st ${esc(o.status)}">${status}</tr>`;
   }).join('');
@@ -78,8 +80,11 @@ function ordersPage(orders, itemsByOrder, msg, ctx, k) {
 ${kpis(k)}
 <div class="actions"><a class="btn" href="/admin/commandes.csv?c=${cid}">Télécharger (CSV)</a></div>
 ${tabs(cid, 'clients')}
-<div class="ordwrap"><table class="orders"><tr><th>N°<th>Date<th>Client<th>Articles<th class="num">Total<th>Statut</tr>${rows}${
-    !orders.length ? '<tr><td colspan="6">Aucune commande.</tr>' : nUnpaid === orders.length ? '<tr class="paidnone"><td colspan="6">Aucune commande payée.</tr>' : ''}</table>
+<div class="ordwrap"><div class="bulkbar" hidden><span class="bulkcount" role="status"></span>
+<label>Changer l’état : <select id="bulkstep" class="bulksel">${STEP_OPTIONS.filter(([v]) => v !== 'refunded').map(([v, t]) => `<option value="${v || 'paid'}">${t}</option>`).join('')}</select></label>
+<button type="button" id="bulkapply" class="primary">Appliquer</button><button type="button" id="bulkclear" class="flat">Tout désélectionner</button><span class="bulkmsg" role="status"></span></div>
+<table class="orders"><tr><th class="sel"><input type="checkbox" id="selall" title="Tout sélectionner" aria-label="Sélectionner toutes les commandes payées"><th aria-sort="descending"><button type="button" class="sortbtn" data-key="num">N°</button><th><button type="button" class="sortbtn" data-key="date">Date</button><th><button type="button" class="sortbtn" data-key="name">Client</button><th>Articles<th class="num">Total<th>Statut</tr>${rows}${
+    !orders.length ? '<tr><td colspan="7">Aucune commande.</tr>' : nUnpaid === orders.length ? '<tr class="paidnone"><td colspan="7">Aucune commande payée.</tr>' : ''}</table>
 <label class="showpending"><input type="checkbox" id="showpending"> Voir les commandes en attente (${nUnpaid})</label></div>`,
   { admin: true, bar: campaignBar(ctx, '/admin/commandes', 'clients'), script: '<script src="/assets/admin-orders.js"></script>' });
 }

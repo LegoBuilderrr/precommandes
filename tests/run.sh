@@ -9,6 +9,6 @@ sleep 2
 # the shop only takes orders while a delivery is ahead: give the seeded campaign one
 node --no-warnings -e "const {DatabaseSync}=require('node:sqlite');const d=new DatabaseSync('/tmp/t4.db');d.prepare('INSERT OR IGNORE INTO deliveries (campaign_id,date) VALUES (1,?)').run(new Date(Date.now()+30*864e5).toISOString().slice(0,10))"
 cd "$HERE"
-node "$1" 2>&1 | grep -E "^(PASS|FAIL|ERROR)" > $HERE/out.txt
+node "$1" > $HERE/out-full.txt 2>&1; grep -E "^(PASS|FAIL|ERROR)" $HERE/out-full.txt > $HERE/out.txt
 awk '{c[$1]++} END{for(k in c) print "  "k, c[k]}' $HERE/out.txt; grep -E "^(FAIL|ERROR)" $HERE/out.txt
 stop

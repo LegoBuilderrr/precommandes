@@ -282,7 +282,7 @@ button.imgdrop:hover{border-color:var(--brand);color:var(--ink);background:var(-
   .campbar select{min-width:0;width:100%}.campbar label{flex-direction:column;align-items:stretch;gap:.3em;width:100%}.campbar form{flex:1 1 100%}.campbar .back{align-self:flex-start}
 }
 /* orders: follow-up menu of a paid order, refund button under the price */
-.stepsel{font:inherit;font-size:.9rem;padding:.25em .4em;border:1px solid #bbb;border-radius:2px;background:#fff;color:var(--ink);cursor:pointer}
+.stepsel,.bulksel{font:inherit;font-size:.9rem;padding:.25em .4em;border:1px solid #bbb;border-radius:2px;background:#fff;color:var(--ink);cursor:pointer}
 .stepmsg{display:block;font-size:.75rem;color:#5a9216;min-height:1em}.stepmsg.bad{color:var(--bad)}
 .orders td.num button.refund{font-size:.68rem;padding:.25rem .5rem;margin-top:.4em}
 /* signed-in account: "jdupont · Déconnexion" */
@@ -295,3 +295,12 @@ body.admin main>.who{display:block;text-align:right;margin:0 0 .6em}
 .loginform .field input{flex:1;min-width:0;font-size:1rem;border-bottom-width:2px}
 .loginform .center{text-align:center}
 .loginform .alert{margin:0 0 1.6rem}
+/* orders tab: sortable headers and bulk step change */
+.orders th.sel,.orders td.sel{width:1.6em;padding-right:0;text-align:center}.orders td.sel input,.orders th.sel input{display:inline-block;margin:0;cursor:pointer}
+.sortbtn{font:inherit;font-weight:inherit;color:inherit;background:none;border:0;box-shadow:none;padding:0;margin:0;height:auto;min-width:0;text-transform:inherit;letter-spacing:inherit;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+.sortbtn:hover{filter:none;background:none;text-decoration:underline}
+.orders th[aria-sort=ascending] .sortbtn::after{content:" ▲";font-size:.7em}.orders th[aria-sort=descending] .sortbtn::after{content:" ▼";font-size:.7em}
+.bulkbar{display:flex;flex-wrap:wrap;align-items:center;gap:.6em 1em;margin:0 0 .8em;padding:.6em .9em;background:#e8f1f4;border-radius:4px}
+.bulkbar[hidden]{display:none}.bulkbar label{display:inline-flex;align-items:center;gap:.4em;margin:0}.bulkbar button{margin:0}
+.bulkcount{font-weight:600}.bulkmsg{font-size:.85rem;color:#5a9216}.bulkmsg.bad{color:var(--bad)}
+.orders tr.picked td{background:#f4fbfe}

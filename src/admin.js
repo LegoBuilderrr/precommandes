@@ -54,6 +54,21 @@ async function setStep(req, res) {
   return r.changes ? sendJson(res, 200, { ok: true }) : sendJson(res, 409, { ok: false, error: 'Seule une commande payée peut changer d’étape.' });
 }
 
+// POST /admin/commandes/etapes : the same follow-up step for several paid orders at once (ids = one `id` field per order).
+// Orders that are not paid are left alone and counted as skipped.
+async function setSteps(req, res) {
+  const f = await readForm(req), step = STEPS[f.get('step')];
+  if (step === undefined) return sendJson(res, 400, { ok: false, error: 'Étape inconnue.' });
+  const ids = [...new Set(f.getAll('id').map(Number).filter((n) => Number.isInteger(n) && n > 0))];
+  if (!ids.length) return sendJson(res, 400, { ok: false, error: 'Aucune commande sélectionnée.' });
+  if (ids.length > 2000) return sendJson(res, 400, { ok: false, error: 'Trop de commandes à la fois.' });
+  const upd = db.prepare("UPDATE orders SET step = ? WHERE id = ? AND status = 'paid'");
+  let changed = 0;
+  db.exec('BEGIN');
+  try { for (const id of ids) changed += upd.run(step, id).changes; db.exec('COMMIT'); } catch (e) { db.exec('ROLLBACK'); throw e; }
+  return sendJson(res, 200, { ok: true, changed, skipped: ids.length - changed });
+}
+
 // POST /admin/api/televerser : a picture for a product (kept in UPLOAD_DIR, served as /uploads/<name>)
 async function uploadPicture(req, res) {
   let buf;
@@ -98,6 +113,7 @@ async function admin(req, res, url) {
   } else {
     if (p === '/admin/commandes/rembourser') return refundOrder(req, res);
     if (p === '/admin/commandes/etape') return setStep(req, res);
+    if (p === '/admin/commandes/etapes') return setSteps(req, res);
     if (p === '/admin/campagnes/creer') {
       const f = await readForm(req);
       const r = campaigns.create({ name: f.get('name'), copyFrom: f.get('copyFrom') });

@@ -91,7 +91,7 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
   html = await (await get('/admin/commandes?c=2&mode=produits')).text(); assert(one("select status from orders where id=?", o1.id).status === 'pending' && html.includes('Aucune vente pour le moment') && !html.includes('class="ph"'), 'Produits mode: a product only in an unpaid order is not listed (no "0 sold" line)');
   assert(o1.number === null, 'a pending order has no order number');
   html = await (await get('/admin/commandes?c=2&mode=clients')).text();
-  assert(/<tr class="unpaid"><td>—<td>/.test(html) && html.includes('<input type="checkbox" id="showpending"> Voir les commandes en attente (1)') && !/id="showpending" checked/.test(html) && html.includes('Aucune commande payée.'), 'Clients tab: the pending order has no number ("—"), is flagged "unpaid" (hidden by CSS), the "voir les commandes en attente" box is unticked, and the table says no paid order');
+  assert(/<tr class="unpaid"[^>]*><td class="sel"><td>—<td>/.test(html) && html.includes('<input type="checkbox" id="showpending"> Voir les commandes en attente (1)') && !/id="showpending" checked/.test(html) && html.includes('Aucune commande payée.'), 'Clients tab: the pending order has no number ("—"), is flagged "unpaid" (hidden by CSS), the "voir les commandes en attente" box is unticked, and the table says no paid order');
   r = await get('/retour?o=' + o1.id); html = await r.text();
   assert(r.status === 200 && html.includes('<h1 class="header">Votre commande</h1>') && !/n°\d/.test(html), 'return page of an unpaid order shows no order number');
   db().prepare("update orders set status='paid' where id=?").run(o1.id); const n1 = numOf(o1.id);
@@ -214,7 +214,7 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
   html = await (await get('/admin/commandes?c=1&mode=clients')).text();
   assert(html.includes(`action="/admin/commandes/rembourser"`) && html.includes('D&#39;Arc O&quot;Brien &lt;b&gt;') && !html.includes('O"Brien <b>'), 'refund button present and the confirmation text is HTML-escaped');
   assert(html.includes('class="pill demo"'), 'demo orders are labelled');
-  const refundedRow = html.split('</tr>').find((x) => new RegExp(`<tr[^>]*><td>${numOf(oid)}(<|$)`).test(x)); assert(refundedRow && !refundedRow.includes('/admin/commandes/rembourser') && refundedRow.includes('Remboursée'), 'refunded order: status shown, no refund button');
+  const refundedRow = html.split('</tr>').find((x) => new RegExp(`<tr[^>]*><td class="sel"><td>${numOf(oid)}(<|$)`).test(x)); assert(refundedRow && !refundedRow.includes('/admin/commandes/rembourser') && refundedRow.includes('Remboursée'), 'refunded order: status shown, no refund button');
   html = await (await get('/admin/commandes?c=1&mode=produits')).text();
   assert(/remboursé \(1 commandes\)/.test(html) || /remboursé/.test(html), 'Produits mode shows the refunded amount');
   const q = (await (await get('/admin/commandes?c=1&mode=produits')).text()); assert(!/Faux-cisses<\/b>/.test(q) || true, 'quantities page renders');
