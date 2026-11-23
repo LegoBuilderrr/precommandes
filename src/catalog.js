@@ -1,7 +1,7 @@
 // Catalogue of ONE campaign as a tree: product -> variants[] + sizes[]. The admin editor loads and saves the whole tree;
 // array position is the display order (drag and drop in the editor), so there are no sort numbers to type.
 const db = require('./db');
-const { weightLabel, unitsLabel } = require('./weight');
+const { weightLabel, unitsLabel, volumeLabel } = require('./weight');
 const { unprefix } = require('./basepath');
 
 const fmt = (cents) => (cents / 100).toFixed(2).replace('.', ',');
@@ -26,7 +26,7 @@ function loadTree({ campaignId, forOrder = false }) {
   const tree = db.prepare('SELECT * FROM products WHERE campaign_id = ? ORDER BY sort, id').all(campaignId).map((p) => ({
     bought: bought.products.has(p.id), id: p.id, name: p.name, active: !!p.active, image_url: p.image_url, info_url: p.info_url, description: p.description,
     variants: variants.filter((v) => v.product_id === p.id).map((v) => ({ bought: bought.variants.has(v.id), id: v.id, name: v.name, active: !!v.active })),
-    sizes: sizes.filter((s) => s.product_id === p.id).map((s) => ({ bought: bought.sizes.has(s.id), id: s.id, label: s.label, name: s.name, grams: s.grams, units: s.units, price_cents: s.price_cents, price: fmt(s.price_cents), active: !!s.active })),
+    sizes: sizes.filter((s) => s.product_id === p.id).map((s) => ({ bought: bought.sizes.has(s.id), id: s.id, label: s.label, name: s.name, grams: s.grams, ml: s.ml, units: s.units, price_cents: s.price_cents, price: fmt(s.price_cents), active: !!s.active })),
   }));
   if (!forOrder) return tree;
   return tree.filter((p) => p.active).map((p) => ({
@@ -66,14 +66,19 @@ function validate(input) {
         return { id: Number(v.id) || null, name: vn, active: v.active ? 1 : 0 };
       });
       const sizes = (p.sizes || []).map((s) => {
-        // unit g / kg: a number stored as grams, label generated ("500gr", "1,5kg"); unit "unit": a whole number of units
-        // ("6 unités", no weight); unit "text": free label, no weight
-        let grams = null, units = null, label;
+        // unit g / kg: a number stored as grams, label generated ("500gr", "1,5kg"); unit cL / L: stored as millilitres
+        // ("33cL", "1,5L"); unit "unit": a whole number of units ("6 unités", no weight); unit "text": free label, no weight
+        let grams = null, ml = null, units = null, label;
         if (s.unit === 'g' || s.unit === 'kg') {
           const n = Number(String(s.amount ?? '').trim().replace(',', '.'));
           grams = Math.round(n * (s.unit === 'kg' ? 1000 : 1));
           if (!String(s.amount ?? '').trim() || !Number.isFinite(n) || grams < 1 || grams > 1e6) throw new Error(`« ${name} » : poids invalide « ${s.amount ?? ''} ${s.unit} » (ex. 500 g ou 1,5 kg).`);
           label = weightLabel(grams);
+        } else if (s.unit === 'cL' || s.unit === 'L') {
+          const n = Number(String(s.amount ?? '').trim().replace(',', '.'));
+          ml = Math.round(n * (s.unit === 'L' ? 1000 : 10));
+          if (!String(s.amount ?? '').trim() || !Number.isFinite(n) || ml < 1 || ml > 1e6) throw new Error(`« ${name} » : volume invalide « ${s.amount ?? ''} ${s.unit} » (ex. 33 cL ou 1,5 L).`);
+          label = volumeLabel(ml);
         } else if (s.unit === 'unit') {
           const n = Number(String(s.amount ?? '').trim().replace(',', '.'));
           if (!Number.isInteger(n) || n < 1 || n > 9999) throw new Error(`« ${name} » : nombre d'unités invalide « ${s.amount ?? ''} » (entier, ex. 1 ou 6).`);
@@ -86,7 +91,7 @@ function validate(input) {
         seenS.add(label.toLowerCase());
         const cents = parseEuros(s.price);
         if (Number.isNaN(cents)) throw new Error(`« ${name} » / ${label} : prix invalide (ex. 12,50).`);
-        return { id: Number(s.id) || null, label, name: text(s.name, 30, `« ${name} » / ${label} : nom du prix`), grams, units, price_cents: cents, active: s.active ? 1 : 0 };
+        return { id: Number(s.id) || null, label, name: text(s.name, 30, `« ${name} » / ${label} : nom du prix`), grams, ml, units, price_cents: cents, active: s.active ? 1 : 0 };
       });
       if (!sizes.length) throw new Error(`« ${name} » doit avoir au moins un poids avec un prix.`);
       return { id: Number(p.id) || null, name, active: p.active ? 1 : 0,
@@ -118,8 +123,8 @@ function saveTree(campaignId, input) {
         else keep.variants.add(Number(db.prepare('INSERT INTO variants (product_id, name, sort, active) VALUES (?,?,?,?)').run(pid, v.name, (j + 1) * 10, v.active).lastInsertRowid));
       });
       p.sizes.forEach((s, j) => {
-        if (had.sizes.get(s.id) === pid) db.prepare('UPDATE sizes SET label=?, name=?, grams=?, units=?, price_cents=?, sort=?, active=? WHERE id=?').run(s.label, s.name, s.grams, s.units, s.price_cents, (j + 1) * 10, s.active, s.id), keep.sizes.add(s.id);
-        else keep.sizes.add(Number(db.prepare('INSERT INTO sizes (product_id, label, name, grams, units, price_cents, sort, active) VALUES (?,?,?,?,?,?,?,?)').run(pid, s.label, s.name, s.grams, s.units, s.price_cents, (j + 1) * 10, s.active).lastInsertRowid));
+        if (had.sizes.get(s.id) === pid) db.prepare('UPDATE sizes SET label=?, name=?, grams=?, ml=?, units=?, price_cents=?, sort=?, active=? WHERE id=?').run(s.label, s.name, s.grams, s.ml, s.units, s.price_cents, (j + 1) * 10, s.active, s.id), keep.sizes.add(s.id);
+        else keep.sizes.add(Number(db.prepare('INSERT INTO sizes (product_id, label, name, grams, ml, units, price_cents, sort, active) VALUES (?,?,?,?,?,?,?,?,?)').run(pid, s.label, s.name, s.grams, s.ml, s.units, s.price_cents, (j + 1) * 10, s.active).lastInsertRowid));
       });
     });
     // Something already bought cannot be removed (it can be renamed, repriced or hidden). Refund the orders first.

@@ -133,7 +133,7 @@ const loadTree = async () => JSON.parse((await (await fetch(B + '/admin/produits
   const c0 = () => $$('.pcard')[0], rowsOf = () => $$('.srow', c0()), lastRow = () => rowsOf()[rowsOf().length - 1];
   const setUnit = (row, v) => { const sel = $('.sunit', row); sel.value = v; sel.dispatchEvent(new w.Event('change', { bubbles: true })); };
   $$('.pbody button', c0()).find((b) => b.textContent.includes('Ajouter un prix')).click();
-  assert($$('.sunit option', lastRow()).map((o) => o.value).join() === 'g,kg,unit,text', 'unit choices: g, kg, unité, texte libre');
+  assert($$('.sunit option', lastRow()).map((o) => o.value).join() === 'g,kg,cL,L,unit,text', 'unit choices: g, kg, cL, L, unité, texte libre');
   assert($$('.sunit option', lastRow()).find((o) => o.value === 'unit').textContent === 'unité', 'the unit is labelled "unité"');
   setUnit(lastRow(), 'unit'); type($('.slabel', lastRow()), '6'); type($('.sprice', lastRow()), '30');
   $('#save').click(); await wait();

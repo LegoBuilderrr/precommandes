@@ -1,15 +1,23 @@
 // Admin screens: campaigns, orders (Produits / Clients tabs), product editor shell, login.
-const { fmtWeight } = require('../weight');
+const { fmtWeight, fmtVolume } = require('../weight');
 const { esc, euros, label, json, layout, frDay, thresholdText } = require('./common');
 
 // admin weights are always grams ("84 910 g"), except the total to prepare which is in kg
 const fmtG = (g) => `${String(Math.round(g)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} g`;
 const fmtKg = (g) => `${(g / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 2 })} kg`;
-const orderWeight = (items = []) => { const g = items.reduce((n, i) => n + i.qty * (i.grams || 0), 0); return g ? `<br><small class="hint">Poids : ${fmtG(g)}</small>` : ''; };
+const orderWeight = (items = []) => {
+  const g = items.reduce((n, i) => n + i.qty * (i.grams || 0), 0), ml = items.reduce((n, i) => n + i.qty * (i.ml || 0), 0);
+  const parts = [g ? `Poids : ${fmtG(g)}` : '', ml ? `Volume : ${fmtVolume(ml)}` : ''].filter(Boolean);
+  return parts.length ? `<br><small class="hint">${parts.join(' · ')}</small>` : '';
+};
 // a weighted price is shown as grams ("1 000 g", not "1kg"), preceded by its customer-facing name when it has one ("x2 (160 g)");
 // prices sold by the unit / free text keep their label
-const sizeG = (size, grams, name = '') => { const g = grams == null ? size : fmtG(grams); return name ? (grams == null ? name : `${name} (${g})`) : g; };
-const lineText = (i) => `${i.qty} × ${esc(label(i.product, i.variant, sizeG(i.size, i.grams, i.size_name)))}`;
+// (a volume is shown in litres, "0,33 L")
+const sizeG = (size, grams, name = '', ml = null) => {
+  const measured = grams != null || ml != null, g = grams != null ? fmtG(grams) : ml != null ? fmtVolume(ml) : size;
+  return name ? (measured ? `${name} (${g})` : name) : g;
+};
+const lineText = (i) => `${i.qty} × ${esc(label(i.product, i.variant, sizeG(i.size, i.grams, i.size_name, i.ml)))}`;
 const STEP_OPTIONS = [['', 'Payée'], ['prepared', 'Préparée'], ['contacted', 'Contactée'], ['collected', 'Retirée'], ['refunded', 'Remboursée']];
 const STATUS_FR = { pending: 'En attente', paid: 'Payée', failed: 'Échec', refunding: 'Remboursement en cours', refunded: 'Remboursée' };
 
@@ -27,7 +35,7 @@ const campaignBar = (ctx, action, mode = '') => `<div class="campbar"><div class
 const tabs = (cid, mode) => `<div class="tabs"><a class="tab${mode === 'produits' ? ' on' : ''}" href="/admin/commandes?c=${cid}&mode=produits">Produits</a><a class="tab${mode === 'clients' ? ' on' : ''}" href="/admin/commandes?c=${cid}&mode=clients">Clients</a></div>`;
 
 const kpis = (k) => `<div class="kpis"><div class="kpi"><b>${euros(k.paid_cents)}</b>encaissé (${k.paid_orders} commandes)</div>
-<div class="kpi"><b>${fmtKg(k.paid_grams)}</b>total${k.paid_noweight ? `<small class="hint">${k.paid_noweight} article(s) sans poids non comptés</small>` : ''}</div>${k.refunded_orders ? `<div class="kpi"><b>${euros(k.refunded_cents)}</b>remboursé (${k.refunded_orders} commandes)</div>` : ''}</div>`;
+<div class="kpi"><b>${fmtKg(k.paid_grams)}</b>total${k.paid_noweight ? `<small class="hint">${k.paid_noweight} article(s) sans poids non comptés</small>` : ''}</div>${k.paid_ml ? `<div class="kpi"><b>${fmtVolume(k.paid_ml)}</b>volume total</div>` : ''}${k.refunded_orders ? `<div class="kpi"><b>${euros(k.refunded_cents)}</b>remboursé (${k.refunded_orders} commandes)</div>` : ''}</div>`;
 
 function dashboard(k, rows, perDay, msg, ctx) {
   const byProduct = new Map();
@@ -36,15 +44,17 @@ function dashboard(k, rows, perDay, msg, ctx) {
     g.lines.push(r);
     byProduct.set(r.product, g);
   }
+  const measure = (r) => (r.paid_grams ? fmtG(r.paid_grams) : r.paid_ml ? fmtVolume(r.paid_ml) : '');   // weights in grams, volumes in litres
   const table = [...byProduct.values()].map((g) =>
     `<tr class="ph"><td colspan="3"><b>${esc(g.name)}</b></tr>` +
-    g.lines.map((r) => `<tr class="pl"><td>${esc(label(r.variant, sizeG(r.size, r.grams, r.size_name)))}<td class="num">${r.paid_qty}<td class="num">${r.paid_grams ? fmtG(r.paid_grams) : ''}</tr>`).join('')).join('');
+    g.lines.map((r) => `<tr class="pl"><td>${esc(label(r.variant, sizeG(r.size, r.grams, r.size_name, r.ml)))}<td class="num">${r.paid_qty}<td class="num">${measure(r)}</tr>`).join('')).join('');
+  const measureTitle = rows.some((r) => r.ml != null) ? (rows.some((r) => r.grams != null) ? 'Poids / volume' : 'Volume') : 'Poids';
   const cid = ctx.campaign.id;
   return layout('Commandes', `<h1>Commandes</h1>${msg ? `<p class="note">${esc(msg)}</p>` : ''}
 ${kpis(k)}
 <div class="actions"><a class="btn" href="/admin/totaux.csv?c=${cid}">Télécharger (CSV)</a></div>
 ${tabs(cid, 'produits')}
-<table class="sales"><tr><th>Produit<th class="num">Vendus<th class="num">Poids</tr>${table || '<tr><td colspan="3">Aucune vente pour le moment.</tr>'}</table>
+<table class="sales"><tr><th>Produit<th class="num">Vendus<th class="num">${measureTitle}</tr>${table || '<tr><td colspan="3">Aucune vente pour le moment.</tr>'}</table>
 <h2 class="spaced">Par jour (paiements reçus)</h2><table class="days"><tr><th>Jour<th class="num">Commandes<th class="num">Montant</tr>${
     perDay.map((d) => `<tr><td>${esc(d.day)}<td class="num">${d.n}<td class="num">${euros(d.cents)}</tr>`).join('') || '<tr><td colspan="3">—</tr>'}</table>`,
   { admin: true, bar: campaignBar(ctx, '/admin/commandes', 'produits') });
@@ -116,6 +126,7 @@ ${thresholdHint(c.state)}
 <label>Seuil minimum (poids ou montant)<span class="minrow"><input type="number" name="min_value" min="0" step="any" placeholder="aucun" value="${c.min_kind === 'money' ? c.min_value / 100 : c.min_kind === 'weight' ? c.min_value / 1000 : ''}">
 <select name="min_unit" aria-label="Unité du seuil"><option value="kg"${c.min_kind !== 'money' ? ' selected' : ''}>kg</option><option value="eur"${c.min_kind === 'money' ? ' selected' : ''}>€</option></select></span></label>
 <label>En-tête HTML (optionnel)<textarea name="header_html" rows="6" class="code" maxlength="20000" placeholder="&lt;div&gt;Bienvenue ! …&lt;/div&gt;">${esc(c.header_html)}</textarea></label>
+<div class="imgup"><button type="button" class="flat upimg">🖼 Téléverser une image</button><input type="file" class="upfile" accept="image/jpeg,image/png,image/webp,image/gif" hidden><small class="hint">Le lien de l’image s’affiche : collez-le dans l’en-tête avec &lt;img src="…"&gt;.</small></div>
 <div class="actions"><button>Enregistrer</button></div></form>
 <form method="post" action="/admin/campagnes/supprimer" onsubmit="return confirm('Supprimer cette campagne et ses produits ?')"><input type="hidden" name="id" value="${c.id}">
 <button class="flat" ${c.orders ? 'disabled title="Une campagne qui a des commandes ne peut pas être supprimée."' : ''}>🗑 Supprimer la campagne</button></form></details></section>`).join('');

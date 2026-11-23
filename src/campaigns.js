@@ -59,12 +59,12 @@ function check({ name }) {
 // Copies every product (with variants, sizes, picture, link, description) from one campaign to another.
 function copyCatalog(fromId, toId) {
   const nv = db.prepare('INSERT INTO variants (product_id, name, sort, active) VALUES (?,?,?,?)');
-  const ns = db.prepare('INSERT INTO sizes (product_id, label, name, grams, units, price_cents, sort, active) VALUES (?,?,?,?,?,?,?,?)');
+  const ns = db.prepare('INSERT INTO sizes (product_id, label, name, grams, ml, units, price_cents, sort, active) VALUES (?,?,?,?,?,?,?,?,?)');
   for (const p of db.prepare('SELECT * FROM products WHERE campaign_id = ? ORDER BY sort, id').all(fromId)) {
     const pid = Number(db.prepare('INSERT INTO products (campaign_id, name, sort, active, image_url, info_url, description) VALUES (?,?,?,?,?,?,?)')
       .run(toId, p.name, p.sort, p.active, p.image_url, p.info_url, p.description).lastInsertRowid);
     for (const v of db.prepare('SELECT * FROM variants WHERE product_id = ? ORDER BY sort, id').all(p.id)) nv.run(pid, v.name, v.sort, v.active);
-    for (const s of db.prepare('SELECT * FROM sizes WHERE product_id = ? ORDER BY sort, id').all(p.id)) ns.run(pid, s.label, s.name, s.grams, s.units, s.price_cents, s.sort, s.active);
+    for (const s of db.prepare('SELECT * FROM sizes WHERE product_id = ? ORDER BY sort, id').all(p.id)) ns.run(pid, s.label, s.name, s.grams, s.ml, s.units, s.price_cents, s.sort, s.active);
   }
 }
 

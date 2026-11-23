@@ -253,8 +253,8 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
   const heavy = addOrder({ cid: 1, campaign: 'Veggie Deli', total: 5408, item: { pid: fp.pid, sid: fp.sid, product: 'Foulet nature', size: '2,5kg', cents: 2704, qty: 2, grams: 2500 } });
   const cellsOf = (csvText) => csvText.replace(/^\uFEFF/, '').trim().split(/\r?\n/).map((l) => l.split(';').map((c) => c.replace(/^"|"$/g, '')));
   const oc = cellsOf(await (await get('/admin/commandes.csv?c=1')).text()), tc = cellsOf(await (await get('/admin/totaux.csv?c=1')).text());
-  assert(oc[0].join('|') === 'Commande|Date|Statut|Prénom|Nom|Email|Commentaire|Produit|Option|Nom du prix|Poids (g)|Quantité|Poids total (g)|Prix unitaire (€)|Ligne (€)|Étape', 'commandes.csv columns: ' + oc[0].join('|'));
-  assert(tc[0].join('|') === 'Produit|Option|Nom du prix|Poids (g)|Quantité|Poids total (g)', 'totaux.csv columns: ' + tc[0].join('|'));
+  assert(oc[0].join('|') === 'Commande|Date|Statut|Prénom|Nom|Email|Commentaire|Produit|Option|Nom du prix|Poids (g)|Quantité|Poids total (g)|Prix unitaire (€)|Ligne (€)|Étape|Volume (L)|Volume total (L)', 'commandes.csv columns: ' + oc[0].join('|'));
+  assert(tc[0].join('|') === 'Produit|Option|Nom du prix|Poids (g)|Quantité|Poids total (g)|Volume (L)|Volume total (L)', 'totaux.csv columns: ' + tc[0].join('|'));
   const rawO = (await (await get('/admin/commandes.csv?c=1')).text()), rawT = (await (await get('/admin/totaux.csv?c=1')).text());
   assert(!/Campagne|Veggie Deli|Noël/.test(rawO + rawT), 'no campaign name or column in either CSV');
   assert(!/payé|payée/i.test(oc[0].join() + tc[0].join()), 'no "payé(e)" in the CSV headers');

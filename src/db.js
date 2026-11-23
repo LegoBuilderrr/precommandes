@@ -75,6 +75,9 @@ CREATE TABLE IF NOT EXISTS order_items (
 // Databases made before delivery dates existed get the new columns (the old campaigns.status column is simply ignored).
 const addColumn = (table, column, ddl) => { if (!db.prepare(`PRAGMA table_info(${table})`).all().some((c) => c.name === column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${ddl}`); };
 addColumn('campaigns', 'lead_days', 'INTEGER NOT NULL DEFAULT 0');
+// volumes (litres / centilitres) are kept in millilitres, next to the weights in grams
+addColumn('sizes', 'ml', 'INTEGER');
+addColumn('order_items', 'ml', 'INTEGER');
 addColumn('orders', 'delivery_date', "TEXT NOT NULL DEFAULT ''");
 addColumn('campaigns', 'min_kind', "TEXT NOT NULL DEFAULT ''");
 addColumn('campaigns', 'min_value', 'INTEGER NOT NULL DEFAULT 0');

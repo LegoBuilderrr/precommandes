@@ -1,5 +1,5 @@
 // Customer-facing pages: campaigns list, a campaign's shop, and the confirmation page after paying.
-const { fmtWeight } = require('../weight');
+const { fmtWeight, fmtVolume } = require('../weight');
 const { esc, euros, label, layout, frDate, days, thresholdText } = require('./common');
 
 // a named price shows its quantity next to it: "x2 (320gr)"
@@ -95,7 +95,7 @@ function returnPage(o, status, items, pay, slug = '') {
   }[status] || ['alert', 'Statut inconnu', ''];
   const lines = items.map((i) => `<tr><td>${esc(label(i.product, i.variant))}<td>${esc(sizeText(i.size_name, i.size))}<td class="num">${euros(i.unit_cents)}<td class="num">${i.qty}<td class="num">${euros(i.unit_cents * i.qty)}</tr>`).join('');
   const units = items.reduce((n, i) => n + i.qty, 0);
-  const grams = items.reduce((n, i) => n + i.qty * (i.grams || 0), 0);
+  const grams = items.reduce((n, i) => n + i.qty * (i.grams || 0), 0), ml = items.reduce((n, i) => n + i.qty * (i.ml || 0), 0);
   const means = { Card: 'Carte bancaire', Sepa: 'Prélèvement SEPA' }[pay && pay.means] || (pay && pay.means) || '';
   const receipt = pay && /^https:\/\/www\.helloasso(-sandbox)?\.com\//.test(pay.receipt || '') ? `<a class="btn" href="${esc(pay.receipt)}" target="_blank" rel="noopener noreferrer">Voir le reçu de paiement ↗</a>` : '';
   const actions = ['paid', 'refunded', 'refunding'].includes(status)
@@ -109,7 +109,7 @@ function returnPage(o, status, items, pay, slug = '') {
 <div class="${banner[0]} banner"><b>${banner[1]}</b><br>${esc(banner[2])}</div>
 <section class="card"><h2>Récapitulatif de la commande</h2>
 <div class="scroll"><table class="recapt"><tr><th>Produit<th>Poids<th class="num">Prix unitaire<th class="num">Qté<th class="num">Total</tr>${lines}
-<tr class="tot"><td colspan="3"><b>Total</b><td class="num"><b>${units}</b><td class="num"><b>${euros(o.total_cents)}</b></tr></table></div>${grams ? `<p class="hint">Poids total : <b>${fmtWeight(grams)}</b>${items.some((i) => i.grams == null) ? ' (hors articles sans poids)' : ''}</p>` : ''}</section>
+<tr class="tot"><td colspan="3"><b>Total</b><td class="num"><b>${units}</b><td class="num"><b>${euros(o.total_cents)}</b></tr></table></div>${grams ? `<p class="hint">Poids total : <b>${fmtWeight(grams)}</b>${items.some((i) => i.grams == null && i.ml == null) ? ' (hors articles sans poids)' : ''}</p>` : ''}${ml ? `<p class="hint">Volume total : <b>${fmtVolume(ml)}</b></p>` : ''}</section>
 <div class="cols"><section class="card"><h2>Vos informations</h2>${dl([
     ['Nom', esc(`${o.first_name} ${o.last_name}`)], ['Adresse mail', esc(o.email)], ['Commentaire', esc(o.comment)]])}</section>
 <section class="card"><h2>Paiement</h2>${dl([

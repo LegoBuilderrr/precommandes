@@ -3,11 +3,12 @@
 (() => {
   'use strict';
   const app = document.getElementById('app');
-  // A size is a weight (number + unit g/kg, stored as grams so totals can be computed) or, rarely, a free text ("pièce").
+  // A size is a weight (number + unit g/kg, stored as grams), a volume (cL/L, stored as millilitres) so totals can be computed,
+  // a number of units, or, rarely, a free text ("pièce").
   const fmtNum = (n) => String(Number(n.toFixed(3))).replace('.', ',');
   const toClientSize = (s) => ({ id: s.id, bought: s.bought, price: s.price, active: s.active, label: s.label, name: s.name || '',
-    unit: s.grams != null ? (s.grams >= 1000 ? 'kg' : 'g') : s.units != null ? 'unit' : 'text',
-    amount: s.grams != null ? (s.grams >= 1000 ? fmtNum(s.grams / 1000) : String(s.grams)) : s.units != null ? String(s.units) : '' });
+    unit: s.grams != null ? (s.grams >= 1000 ? 'kg' : 'g') : s.ml != null ? (s.ml >= 1000 ? 'L' : 'cL') : s.units != null ? 'unit' : 'text',
+    amount: s.grams != null ? (s.grams >= 1000 ? fmtNum(s.grams / 1000) : String(s.grams)) : s.ml != null ? (s.ml >= 1000 ? fmtNum(s.ml / 1000) : fmtNum(s.ml / 10)) : s.units != null ? String(s.units) : '' });
   const toClient = (p) => ({ ...p, sizes: p.sizes.map(toClientSize) });
   let tree = JSON.parse(document.getElementById('init').textContent).map((p) => ({ ...toClient(p), _open: false }));
   let dirty = false, saving = false, focusSel = null, drag = null;
@@ -141,9 +142,9 @@
       h('input', { type: 'text', class: 'sname', value: s.name, placeholder: 'Nom (optionnel)', maxlength: 30, 'aria-label': 'Nom du prix (affiché sur la boutique à la place du poids)', oninput: (e) => { s.name = e.target.value; touch(); } }),
       s.unit === 'text'
         ? h('input', { type: 'text', class: 'slabel', value: s.label, placeholder: 'ex. pièce, lot de 6', 'data-size': `${pi}-${si}`, 'aria-label': 'Libellé', oninput: (e) => { s.label = e.target.value; touch(); } })
-        : h('input', { type: 'text', class: 'slabel', value: s.amount, placeholder: s.unit === 'unit' ? '1' : s.unit === 'kg' ? '1,5' : 'quantité', inputmode: 'decimal', 'data-size': `${pi}-${si}`, 'aria-label': 'Poids', oninput: (e) => { s.amount = e.target.value; touch(); } }),
+        : h('input', { type: 'text', class: 'slabel', value: s.amount, placeholder: s.unit === 'unit' ? '1' : s.unit === 'kg' || s.unit === 'L' ? '1,5' : s.unit === 'cL' ? '33' : 'quantité', inputmode: 'decimal', 'data-size': `${pi}-${si}`, 'aria-label': 'Quantité', oninput: (e) => { s.amount = e.target.value; touch(); } }),
       h('select', { class: 'sunit', 'aria-label': 'Unité', onchange: (e) => { s.unit = e.target.value; touch(); render(); } },
-        h('option', { value: 'g', selected: s.unit === 'g' }, 'g'), h('option', { value: 'kg', selected: s.unit === 'kg' }, 'kg'), h('option', { value: 'unit', selected: s.unit === 'unit' }, 'unité'), h('option', { value: 'text', selected: s.unit === 'text' }, 'texte libre')),
+        h('option', { value: 'g', selected: s.unit === 'g' }, 'g'), h('option', { value: 'kg', selected: s.unit === 'kg' }, 'kg'), h('option', { value: 'cL', selected: s.unit === 'cL' }, 'cL'), h('option', { value: 'L', selected: s.unit === 'L' }, 'L'), h('option', { value: 'unit', selected: s.unit === 'unit' }, 'unité'), h('option', { value: 'text', selected: s.unit === 'text' }, 'texte libre')),
       h('input', { type: 'text', class: 'sprice', value: s.price, placeholder: '0,00', inputmode: 'decimal', 'aria-label': 'Prix en euros',
         oninput: (e) => { s.price = e.target.value; touch(); },
         onblur: (e) => { const n = parsePrice(e.target.value); if (!Number.isNaN(n)) { s.price = n.toFixed(2).replace('.', ','); e.target.value = s.price; } } }),

@@ -62,8 +62,8 @@ async function submitOrder(req, res) {
     // the member number column is kept but not asked for now
     orderId = Number(db.prepare(`INSERT INTO orders (campaign_id, campaign, first_name, last_name, member_no, email, comment, total_cents, delivery_date) VALUES (?,?,?,?,'',?,?,?,?)`)
       .run(campaign.id, campaign.name, customer.first, customer.last, customer.email, customer.comment, total, state.next).lastInsertRowid);
-    const ins = db.prepare('INSERT INTO order_items (order_id, product_id, variant_id, size_id, product, variant, size, size_name, unit_cents, qty, grams) VALUES (?,?,?,?,?,?,?,?,?,?,?)');
-    for (const l of lines) ins.run(orderId, l.p.id, l.variant ? l.variant.id : null, l.s.id, l.p.name, l.variant ? l.variant.name : '', l.s.label, l.s.name || '', l.s.price_cents, l.qty, l.s.grams);
+    const ins = db.prepare('INSERT INTO order_items (order_id, product_id, variant_id, size_id, product, variant, size, size_name, unit_cents, qty, grams, ml) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)');
+    for (const l of lines) ins.run(orderId, l.p.id, l.variant ? l.variant.id : null, l.s.id, l.p.name, l.variant ? l.variant.name : '', l.s.label, l.s.name || '', l.s.price_cents, l.qty, l.s.grams, l.s.ml ?? null);
     db.exec('COMMIT');
   } catch (e) { db.exec('ROLLBACK'); throw e; }
 
