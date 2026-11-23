@@ -359,7 +359,13 @@ const openShop = (cid) => db().prepare('insert or ignore into deliveries (campai
     r = await setMin('12,5', 'kg'); assert(campaignRow().v === 12500, 'decimal comma accepted: 12,5 kg'); t = await shopText(); assert(t.includes('seuil de 12,5 kg)'), 'shown as 12,5 kg');
     r = await setMin('500', 'eur'); assert(campaignRow().k === 'money' && campaignRow().v === 50000, 'minimum of 500 € stored as cents'); t = await shopText(); assert(t.includes('seuil de 500,00 €)'), 'shown as an amount: ' + (t.match(/seuil de [^)]*\)/) || [''])[0]);
     html = await (await get('/admin')).text(); assert(/name="min_value"[^>]*value="500"/.test(html) && /<option value="eur" selected>/.test(html) && html.includes('Vendu : 0,00 € (❌ Seuil 500,00 €)'), 'editor shows the value and unit; the card says it is not reached yet');
-    for (const bad of ['abc', '0', '-5', '1e3']) { r = await setMin(bad, 'kg'); assert(/seuil minimum/i.test(decodeURIComponent(loc(r))) && campaignRow().v === 50000, `invalid minimum « ${bad} » refused, previous value kept`); }
+    for (const bad of ['abc', '-5', '1e3', '0,0001']) { r = await setMin(bad, 'kg'); assert(/seuil minimum/i.test(decodeURIComponent(loc(r))) && campaignRow().v === 50000, `invalid minimum « ${bad} » refused, previous value kept`); }
+    // 0 means "no minimum" (and is what the form shows by default)
+    r = await setMin('0', 'eur'); t = await shopText(); html = await (await get('/admin')).text();
+    assert(campaignRow().k === '' && campaignRow().v === 0 && !notice(t), 'minimum 0 = no minimum: nothing stored, no notice on the shop');
+    assert(html.includes('Seuil minimum (0 = aucun seuil)') && /name="min_value"[^>]*value="0"/.test(html) && !/Seuil minimum \(poids ou montant\)/.test(html) && /<option value="kg" selected>/.test(html), 'editor: new label, the box holds 0 by default');
+    assert(/<option value="kg"[^>]*>kg<\/option><option value="L"[^>]*>L<\/option><option value="eur"[^>]*>€<\/option>/.test(html), 'editor: units kg, L, €');
+    await setMin('500', 'eur');
     r = await post('/admin/campagnes/enregistrer', { id: '1', name: 'Veggie Deli', delivery_date: [future(10)] }); assert(campaignRow().k === 'money' && campaignRow().v === 50000, 'saving without the minimum fields leaves it as it is');
     // progress counts only PAID orders for the NEXT delivery
     const pid1 = one("select p.id pid, s.id sid from products p join sizes s on s.product_id=p.id where p.campaign_id=1 and p.name='Foulet nature' limit 1");

@@ -21,13 +21,14 @@ const dayNumber = (s) => Math.round(Date.parse(s + 'T00:00:00Z') / 864e5);
 const addDays = (s, n) => new Date((dayNumber(s) + n) * 864e5).toISOString().slice(0, 10);
 const deliveries = (campaignId) => db.prepare('SELECT date FROM deliveries WHERE campaign_id = ? ORDER BY date').all(campaignId).map((r) => r.date);
 
-// The campaign's minimum (a weight or an amount) against what has been paid for the next delivery:
-// { kind: 'weight' | 'money', value, current, reached } (grams / cents), or null without a minimum
+// The campaign's minimum (a weight, a volume or an amount) against what has been paid for the next delivery:
+// { kind: 'weight' | 'volume' | 'money', value, current, reached } (grams / millilitres / cents), or null without a minimum (0)
+const MEASURE_COLUMN = { weight: 'grams', volume: 'ml' };
 function threshold(c, next) {
   if (!next || !c.min_kind || !(c.min_value > 0)) return null;
   const current = c.min_kind === 'money'
     ? db.prepare("SELECT COALESCE(SUM(total_cents), 0) AS n FROM orders WHERE campaign_id = ? AND status = 'paid' AND delivery_date = ?").get(c.id, next).n
-    : db.prepare("SELECT COALESCE(SUM(oi.qty * oi.grams), 0) AS n FROM order_items oi JOIN orders o ON o.id = oi.order_id WHERE o.campaign_id = ? AND o.status = 'paid' AND o.delivery_date = ?").get(c.id, next).n;
+    : db.prepare(`SELECT COALESCE(SUM(oi.qty * oi.${MEASURE_COLUMN[c.min_kind] || 'grams'}), 0) AS n FROM order_items oi JOIN orders o ON o.id = oi.order_id WHERE o.campaign_id = ? AND o.status = 'paid' AND o.delivery_date = ?`).get(c.id, next).n;
   return { kind: c.min_kind, value: c.min_value, current, reached: current >= c.min_value };
 }
 
@@ -102,14 +103,16 @@ function update(id, input) {
   // header_html: raw HTML written by an admin, shown on the public shop page. null/undefined = leave unchanged.
   const header = input.header_html == null ? cur.header_html : String(input.header_html).trim();
   if (header.length > 20000) return { error: 'En-tête HTML trop long (20 000 caractères maximum).' };
-  // minimum to reach for a delivery: a weight (kg) or an amount (€); empty = none, no field at all = unchanged
+  // minimum to reach for a delivery: a weight (kg), a volume (L) or an amount (€); 0 or empty = no minimum, no field at all = unchanged
   let minKind = cur.min_kind, minValue = cur.min_value;
   if (input.min_value != null) {
     const raw = String(input.min_value).trim().replace(',', '.');
-    if (raw === '') { minKind = ''; minValue = 0; }
-    else if (input.min_unit === 'eur') { minKind = 'money'; minValue = parseEuros(raw); }
-    else { minKind = 'weight'; const kg = /^\d{1,6}(\.\d{1,3})?$/.test(raw) ? Number(raw) : NaN; minValue = Math.round(kg * 1000); }
-    if (raw !== '' && !(minValue > 0 && minValue <= 1e9)) return { error: 'Le seuil minimum doit être un nombre positif (ex. 50 kg ou 500 €).' };
+    const unit = input.min_unit === 'eur' ? 'money' : input.min_unit === 'L' ? 'volume' : 'weight';
+    if (unit === 'money') minValue = raw === '' ? 0 : parseEuros(raw);
+    else { const n = raw === '' ? 0 : /^\d{1,6}(\.\d{1,3})?$/.test(raw) ? Number(raw) : NaN; minValue = Math.round(n * 1000); }   // kg -> g, L -> mL
+    if (minValue === 0) minKind = '';
+    else if (minValue > 0 && minValue <= 1e9) minKind = unit;
+    else return { error: 'Le seuil minimum doit être un nombre positif (ex. 50 kg, 20 L ou 500 €), ou 0 pour aucun seuil.' };
   }
   db.exec('BEGIN');
   try {

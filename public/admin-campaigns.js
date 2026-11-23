@@ -41,8 +41,7 @@
     const box = h('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Image téléversée' },
       h('div', { class: 'modal-box ok' }, h('div', { class: 'modal-title' }, 'Image téléversée'),
         h('img', { class: 'linkprev', src: url, alt: '' }),
-        h('p', {}, 'Collez ce lien dans l’en-tête de la campagne, par exemple :'), input,
-        h('p', { class: 'hint' }, `<img src="${url}" alt="">`),
+        h('p', {}, 'Collez ce lien dans l’en-tête de la campagne :'), input,
         h('div', { class: 'modal-actions' }, msg, copy, close)));
     const done = () => { box.remove(); document.removeEventListener('keydown', onKey, true); if (opener) opener.focus(); };
     const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); done(); } };

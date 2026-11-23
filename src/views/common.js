@@ -1,6 +1,6 @@
 // Pieces shared by the shop and admin templates: escaping, the page frame, French dates, the campaign minimum text.
 // Everything user-supplied goes through esc().
-const { fmtWeight } = require('../weight');
+const { fmtWeight, fmtVolume } = require('../weight');
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const euros = (cents) => (cents / 100).toFixed(2).replace('.', ',') + ' €';
 const label = (...parts) => parts.filter(Boolean).join(' ');
@@ -26,6 +26,6 @@ const frDay = (iso) => frDate(iso).replace(/^\S+ /, '');
 const days = (n) => `${n} jour${n > 1 ? 's' : ''}`;
 
 // "50 kg" or "500,00 €": the campaign's minimum to reach
-const thresholdText = (t) => (t.kind === 'money' ? euros(t.value) : fmtWeight(t.value));
+const thresholdText = (t) => (t.kind === 'money' ? euros(t.value) : t.kind === 'volume' ? fmtVolume(t.value) : fmtWeight(t.value));
 
 module.exports = { esc, euros, label, json, layout, frDate, frDay, days, thresholdText };

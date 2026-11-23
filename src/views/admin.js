@@ -104,7 +104,7 @@ const COPY_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="
 // Admin: how far the paid orders for the next delivery are from the campaign's minimum
 const thresholdHint = (st) => {
   const t = st.threshold; if (!t) return '';
-  const cur = t.kind === 'money' ? euros(t.current) : fmtWeight(t.current);
+  const cur = t.kind === 'money' ? euros(t.current) : t.kind === 'volume' ? fmtVolume(t.current) : fmtWeight(t.current);
   return `<div class="hint">Vendu : ${esc(cur)} (${t.reached ? '✅' : '❌'} Seuil ${esc(thresholdText(t))})</div>`;
 };
 
@@ -123,8 +123,8 @@ ${thresholdHint(c.state)}
 <div class="datelist">${[...c.state.dates, ''].map((d) => `<div class="daterow"><input type="date" name="delivery_date" value="${esc(d)}"><button type="button" class="ibtn rmdate" title="Retirer cette date" aria-label="Retirer cette date">✕</button></div>`).join('')}</div>
 <button type="button" class="flat adddate">+ Ajouter une date</button></fieldset>
 <label>Délai maximum de commande (jours avant la livraison)<input type="number" name="lead_days" min="0" max="365" step="1" value="${Number(c.lead_days) || 0}" required></label>
-<label>Seuil minimum (poids ou montant)<span class="minrow"><input type="number" name="min_value" min="0" step="any" placeholder="aucun" value="${c.min_kind === 'money' ? c.min_value / 100 : c.min_kind === 'weight' ? c.min_value / 1000 : ''}">
-<select name="min_unit" aria-label="Unité du seuil"><option value="kg"${c.min_kind !== 'money' ? ' selected' : ''}>kg</option><option value="eur"${c.min_kind === 'money' ? ' selected' : ''}>€</option></select></span></label>
+<label>Seuil minimum (0 = aucun seuil)<span class="minrow"><input type="number" name="min_value" min="0" step="any" required value="${c.min_kind === 'money' ? c.min_value / 100 : c.min_kind === 'weight' || c.min_kind === 'volume' ? c.min_value / 1000 : 0}">
+<select name="min_unit" aria-label="Unité du seuil"><option value="kg"${c.min_kind !== 'money' && c.min_kind !== 'volume' ? ' selected' : ''}>kg</option><option value="L"${c.min_kind === 'volume' ? ' selected' : ''}>L</option><option value="eur"${c.min_kind === 'money' ? ' selected' : ''}>€</option></select></span></label>
 <label>En-tête HTML (optionnel)<textarea name="header_html" rows="6" class="code" maxlength="20000" placeholder="&lt;div&gt;Bienvenue ! …&lt;/div&gt;">${esc(c.header_html)}</textarea></label>
 <div class="imgup"><button type="button" class="flat upimg">🖼 Téléverser une image</button><input type="file" class="upfile" accept="image/jpeg,image/png,image/webp,image/gif" hidden><small class="hint">Le lien de l’image s’affiche : collez-le dans l’en-tête avec &lt;img src="…"&gt;.</small></div>
 <div class="actions"><button>Enregistrer</button></div></form>

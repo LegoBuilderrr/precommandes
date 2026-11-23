@@ -56,6 +56,20 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
   r = await post('/admin/campagnes/creer', form({ name: 'Boissons bis', copyFrom: String(cid) })); const cid2 = Number(/c=(\d+)/.exec(r.headers.get('location'))[1]);
   assert(new D2('/tmp/t4.db').prepare('select group_concat(s.ml) m from sizes s join products p on p.id=s.product_id where p.campaign_id=?').get(cid2).m === '330,1500', 'duplicating a campaign copies the volumes');
 
+  // ---- minimum in litres: 0 = none, 20 L stored as millilitres, counted from the paid volumes of the next delivery
+  const day = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10);
+  const setMin = (value, unit) => post('/admin/campagnes/enregistrer', form({ id: String(cid), name: 'Boissons', lead_days: '0', delivery_date: day, min_value: value, min_unit: unit }));
+  const camp = () => sdb.prepare('select min_kind k, min_value v from campaigns where id=?').get(cid);
+  const shopText = async () => (await (await fetch(B + '/boutique/boissons')).text()).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+  await setMin('3', 'L'); assert(camp().k === 'volume' && camp().v === 3000, 'minimum 3 L is stored as 3000 mL (' + JSON.stringify(camp()) + ')');
+  assert(/seuil de 3 L\)/.test(await shopText()), 'shop: « sous réserve d’atteindre notre seuil de 3 L »');
+  html = await (await fetch(B + '/admin')).text(); assert(/<option value="L" selected>/.test(html) && /value="3"/.test(html) && html.includes('Vendu : 0 L (❌ Seuil 3 L)'), 'admin card: volume progress 0 L, unit L selected in the editor');
+  sdb.prepare('update orders set delivery_date=? where id=?').run(day, oid);
+  html = await (await fetch(B + '/admin')).text(); assert(html.includes('Vendu : 2,16 L (❌ Seuil 3 L)'), 'paid volumes of the delivery are counted: 2,16 L of 3 L');
+  await setMin('2', 'L'); html = await (await fetch(B + '/admin')).text(); assert(html.includes('Vendu : 2,16 L (✅ Seuil 2 L)') && !/sous réserve/.test(await shopText()), 'minimum reached: ✅ and no notice on the shop');
+  await setMin('0', 'L'); html = await (await fetch(B + '/admin')).text(); assert(camp().k === '' && camp().v === 0 && !html.includes('Seuil 2 L') && !/sous réserve/.test(await shopText()), '0 removes the minimum');
+  r = await setMin('-1', 'L'); assert(/seuil/i.test(decodeURIComponent(r.headers.get('location'))) && camp().k === '', 'a negative minimum is refused');
+
   // ---- picture for the campaign description
   html = await (await fetch(B + '/admin')).text();
   assert(html.includes('upimg"') && html.includes('class="upfile"') && html.includes('accept="image/jpeg,image/png,image/webp,image/gif"'), 'campaigns page: “Téléverser une image” under the description');
@@ -69,7 +83,7 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
   for (let i = 0; i < 30 && !d.querySelector('.modal'); i++) await new Promise((x) => setTimeout(x, 100));
   const pop = d.querySelector('.modal'), box = pop && pop.querySelector('.linkbox');
   assert(pop && /Image téléversée/.test(pop.textContent) && box && /^https:\/\/localhost:8444\/uploads\/[0-9a-f]{16}\.png$/.test(box.value), 'popup with the image link: ' + (box && box.value));
-  assert(pop.querySelector('.linkprev') && pop.textContent.includes(`<img src="${box.value}" alt="">`), 'popup: preview and a ready <img> tag');
+  assert(pop.querySelector('.linkprev') && !pop.textContent.includes('<img'), 'popup: preview and the link only (no <img> tag text)');
   const got = await fetch(box.value.replace(/^https:\/\/localhost:8444/, B)); assert(got.status === 200 && /image\/png/.test(got.headers.get('content-type')), 'the link serves the uploaded image');
   let copied = ''; Object.defineProperty(w.navigator, 'clipboard', { value: { writeText: async (t) => { copied = t; } }, configurable: true });
   pop.querySelector('button.primary').click(); await new Promise((x) => setTimeout(x, 50));

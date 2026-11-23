@@ -14,8 +14,8 @@ CREATE TABLE IF NOT EXISTS campaigns (
   name TEXT NOT NULL, slug TEXT NOT NULL UNIQUE,
   header_html TEXT NOT NULL DEFAULT '',     -- admin-written HTML shown at the top of the campaign's shop page
   lead_days INTEGER NOT NULL DEFAULT 0,     -- orders for a delivery close this many days before it
-  min_kind TEXT NOT NULL DEFAULT '',        -- '' (no minimum) | 'weight' | 'money': the delivery needs this much ordered
-  min_value INTEGER NOT NULL DEFAULT 0,     -- grams for 'weight', cents for 'money'
+  min_kind TEXT NOT NULL DEFAULT '',        -- '' (no minimum) | 'weight' | 'volume' | 'money': the delivery needs this much ordered
+  min_value INTEGER NOT NULL DEFAULT 0,     -- grams for 'weight', millilitres for 'volume', cents for 'money'
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE TABLE IF NOT EXISTS deliveries (     -- delivery dates of a campaign (the shop is open while one is ahead)
